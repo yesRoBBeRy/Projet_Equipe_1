@@ -1,13 +1,22 @@
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
+from src.scene_3D import Scene3D
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        layout = QVBoxLayout()
+        self.resize(800, 600)
+
+        centre = QWidget()
+        self.setCentralWidget(centre)
+
+        layout = QHBoxLayout(centre)
+
+        self.scene = Scene3D(centre)
 
         layout.addWidget(self.scene.plotter)
 
-        self.setLayout(layout)
+        self.scene.plotter.show()
+        self.scene.ajouter()
