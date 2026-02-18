@@ -3,8 +3,8 @@ import sys
 
 from src.main_window import MainWindow
 
+app = QApplication(sys.argv)
+window = MainWindow()
+window.show()
 
-def main():
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
+sys.exit(app.exec_())
