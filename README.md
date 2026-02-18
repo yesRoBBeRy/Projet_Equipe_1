@@ -65,7 +65,3 @@ Contraintes:
   La dynamique des fluides est un sujet très difficile à comprendre et à appliquer. Pour être dans les temps, nous utiliserons des          simplifications pour des cas spécifiques.
   Répartition des tâches
   Noam et Félix-Antoine s’occuperont de tout ce qui est graphique. Noam s’occupera de la 3D et Félix-Antoine, de l’interface graphique.     Elliot s’occupera de la logique. Nous nous attendons à ce que nous allions aussi aider Elliot plus tard dans le projet si nécessaire.
-  
-Conclusion:
-  En conclusion, nous continuerons à nous informer sur le sujet, qui est très difficile, et nous commencerons la structure générale du      projet.
-
