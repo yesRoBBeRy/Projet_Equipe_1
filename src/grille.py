@@ -1,21 +1,20 @@
 import pyvista as pv
 import numpy as np
 
+
 class Grille:
     def __init__(self, x, y, z):
-
         self.valeurs = {
-            "vx" : np.zeros((x,y,z)),
-            "vy" : np.zeros((x,y,z)),
-            "vz" : np.zeros((x,y,z)),
-            "densitee" : np.ones((x,y,z))
+            "vx": np.zeros((x, y, z)),
+            "vy": np.zeros((x, y, z)),
+            "vz": np.zeros((x, y, z)),
+            "densitee": np.ones((x, y, z))
         }
+        self.test_rand()
 
-        self.mesh = pv.ImageData(
-            dimensions=(x,y,z),
-            spacing=(1, 1, 1),
-            origin=(0, 0, 0)
-        )
+    def test_rand(self):
+        forme = self.valeurs["densitee"].shape
+        self.valeurs["densitee"][:] = np.random.uniform(0,1,size=forme)
 
-        for name, arr in self.valeurs.items():
-            self.mesh.cell_data[name] = arr.flatten(order="F")
+    def update_valeurs(self):
+        self.valeurs["densitee"] *= 0.99
