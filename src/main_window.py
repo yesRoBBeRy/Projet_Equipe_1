@@ -1,11 +1,13 @@
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from src.scene_3D import Scene3D
+from src.grille import Grille
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.grille = Grille(9,9,9)
 
         self.resize(800, 600)
 
@@ -19,4 +21,3 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.scene.plotter)
 
         self.scene.plotter.show()
-        self.scene.ajouter()
