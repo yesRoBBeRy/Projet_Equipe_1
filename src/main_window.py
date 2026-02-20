@@ -14,7 +14,7 @@ class MainWindow(QMainWindow):
 
         layout = QHBoxLayout(centre)
 
-        self.scene = Scene3D(centre)
+        self.scene = Scene3D(centre, self.grille)
 
         layout.addWidget(self.scene.plotter)
 
