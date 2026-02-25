@@ -1,3 +1,7 @@
+import os
+os.environ["QT_MAC_WANTS_LAYER"] = "1"
+
+
 import pyvista as pv
 from pyvistaqt import QtInteractor
 
