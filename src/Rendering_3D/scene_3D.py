@@ -1,11 +1,5 @@
-import os
-
 from src.Rendering_3D.grille_3D import Grille3D
 
-os.environ["QT_MAC_WANTS_LAYER"] = "1"
-
-
-import pyvista as pv
 from pyvistaqt import QtInteractor
 
 
