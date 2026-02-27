@@ -1,9 +1,6 @@
-import os
+import numpy as np
 
 from src.Rendering_3D.grille_3D import Grille3D
-
-os.environ["QT_MAC_WANTS_LAYER"] = "1"
-
 
 import pyvista as pv
 from pyvistaqt import QtInteractor
@@ -23,3 +20,16 @@ class Scene3D:
             cmap="Greys"
         )
         self.plotter.show()
+
+    def add_sphere(self):
+        sphere = pv.Sphere(
+            radius=float(np.random.uniform(0.5, 2.0)),  # Must be a single number
+            center=(
+                float(np.random.uniform(0, 50)),  # X coordinate
+                float(np.random.uniform(0, 50)),  # Y coordinate
+                float(np.random.uniform(0, 100))  # Z coordinate
+            )
+        )
+
+        self.plotter.add_mesh(sphere)
+        self.plotter.render()
