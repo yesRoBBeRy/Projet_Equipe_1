@@ -1,4 +1,5 @@
 from PySide6.QtCore import QTimer, Qt
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QMainWindow, QWidget,
     QPushButton, QSlider, QLabel
@@ -16,6 +17,8 @@ class MainWindow(QMainWindow):
 
         self.grille = Grille(5, 5, 10)
 
+        police_scientifique = QFont("Consolas", 12)  # monospace, taille 12
+
         self.resize(1200, 650)
 
         centre = fondEtoile()
@@ -25,11 +28,14 @@ class MainWindow(QMainWindow):
         self.setStyleSheet("""
         QMainWindow {
             background-color: #0b0f1a;
+            font-family: Roboto Mono;
+            font-size: 12pt;
         }
 
         QLabel {
             color: #cfd8ff;
-            font-size: 13px;
+            font-family: Consolas;
+            font-size: 12pt;
         }
 
         QPushButton {
@@ -37,6 +43,8 @@ class MainWindow(QMainWindow):
             color: white;
             border: 1px solid #3b4a7a;
             padding: 6px;
+            font-family: Consolas;
+            font-size: 12pt;
         }
 
         QPushButton:hover {
@@ -79,19 +87,25 @@ class MainWindow(QMainWindow):
         layout_controles.setSpacing(40)
 
         def creer_bloc(nom, min_val, max_val, unite="", facteur=1):
-
             bloc = QVBoxLayout()
 
+            # ligne titre + valeur
             ligne = QHBoxLayout()
             label_nom = QLabel(nom)
             label_valeur = QLabel(str(min_val) + " " + unite)
+
+            # Appliquer police scientifique au label de valeur
+            label_valeur.setFont(police_scientifique)
 
             ligne.addWidget(label_nom)
             ligne.addStretch()
             ligne.addWidget(label_valeur)
 
+            # bouton
             bouton = QPushButton(nom)
+            bouton.setFont(police_scientifique)  # police scientifique sur bouton
 
+            # slider
             slider = QSlider(Qt.Horizontal)
             slider.setRange(int(min_val * facteur), int(max_val * facteur))
 
