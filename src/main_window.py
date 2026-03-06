@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         centre = fondEtoile()
         self.setCentralWidget(centre)
 
-        # ===== STYLE AEROSPACE =====
+
         self.setStyleSheet("""
         QMainWindow {
             background-color: #0b0f1a;
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
 
         layout_principal.addWidget(scene_container, stretch=3)
 
-        # ===== PANNEAU CONTROLES =====
+
         panneau = QWidget()
         layout_controles = QVBoxLayout(panneau)
         layout_controles.setSpacing(40)
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
 
             return bouton, slider
 
-        # ===== PARAMETRES =====
+
 
         self.btn_temperature, self.slider_temperature = creer_bloc(
             "Temperature", 0, 30, "°C"
@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
 
         layout_principal.addWidget(panneau, stretch=1)
 
-        # ===== TIMER =====
+
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
         self.timer.start(1000 // 30)
