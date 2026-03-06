@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QPushButton, QSlider, QLabel
 )
 
+from fondEtoile import fondEtoile
 from src.Rendering_3D.scene_3D import Scene3D
 from src.grille import Grille
 
@@ -13,11 +14,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.grille = Grille(50, 50, 100)
+        self.grille = Grille(5, 5, 10)
 
         self.resize(1200, 650)
 
-        centre = QWidget()
+        centre = fondEtoile()
         self.setCentralWidget(centre)
 
         # ===== STYLE AEROSPACE =====
