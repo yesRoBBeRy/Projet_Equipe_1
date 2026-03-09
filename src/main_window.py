@@ -1,7 +1,7 @@
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QFont, QColor
 from PySide6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QMainWindow, QWidget, QSlider, QLabel
+    QHBoxLayout, QVBoxLayout, QMainWindow, QWidget, QSlider, QLabel, QPushButton
 )
 
 from fondEtoile import fondEtoile
@@ -18,56 +18,46 @@ class MainWindow(QMainWindow):
 
         police_scientifique = QFont("Consolas", 12)  # monospace, taille 12
 
+        self.resize(1200, 650)
 
-        self.resize(1200,650)
-
-        centre = fondEtoile(self.height(),self.width())
+        centre = fondEtoile(self.height(), self.width())
         self.setCentralWidget(centre)
-
-
-
-
 
         layout_principal = QHBoxLayout(centre)
         layout_principal.setContentsMargins(20, 20, 20, 20)
         layout_principal.setSpacing(25)
 
+        # scène3D
+        scene_containerScene = QWidget()
 
-        scene_container = QWidget()
+        scene_layoutScene3D = QVBoxLayout(scene_containerScene)
 
+        self.scene = Scene3D(scene_containerScene, self.grille)
 
-        scene_layout = QVBoxLayout(scene_container)
+        scene_layoutScene3D.addWidget(self.scene.plotter)
 
-        self.scene = Scene3D(scene_container, self.grille)
+        layout_principal.addWidget(scene_containerScene, stretch=3)
 
-        scene_layout.addWidget(self.scene.plotter)
-
-        layout_principal.addWidget(scene_container, stretch=3)
-
-
+        # panneau de contrôle
         panneau = QWidget()
+
         layout_controles = QVBoxLayout(panneau)
-        layout_controles.setSpacing(40)
+
+        layout_controles.setSpacing(10)
 
         def creer_bloc(nom, min_val, max_val, unite="", facteur=1):
             bloc = QVBoxLayout()
 
-
+            texte = QLabel(nom)
+            texte.setFont(police_scientifique)
             ligne = QHBoxLayout()
-            label_nom = QLabel(nom)
             label_valeur = QLabel(str(min_val) + " " + unite)
-
 
             label_valeur.setFont(police_scientifique)
 
-            ligne.addWidget(label_nom)
+            ligne.addWidget(texte)
             ligne.addStretch()
             ligne.addWidget(label_valeur)
-
-
-            texte = QLabel(nom)
-            texte.setFont(police_scientifique)
-
 
             slider = QSlider(Qt.Horizontal)
             slider.setRange(int(min_val * facteur), int(max_val * facteur))
@@ -85,38 +75,99 @@ class MainWindow(QMainWindow):
 
             return texte, slider
 
+        boutons = QHBoxLayout()
+
+        boutons.setSpacing(10)
+
+        boutonRun = QPushButton("Run")
+        boutonPause = QPushButton("Pause")
+        boutonReprendre = QPushButton("Reprendre")
+
+        boutons.addWidget(boutonRun)
+        boutons.addWidget(boutonPause)
+        boutons.addWidget(boutonReprendre)
+
+        boutonRun.clicked.connect(self.animerRun)
+        boutonPause.clicked.connect(self.animerPause)
+        boutonReprendre.clicked.connect(self.animerReprendre)
+
+        # TODO les formes a mettre
+
+        formesGeometrique = QHBoxLayout()
+        boutonCercle = QPushButton("Cercle")
+        boutonCercle.setFixedSize(130, 130)  # taille du cercle
+        boutonCercle.setStyleSheet("""
+        QPushButton {
+            border-radius: 25px;  
+            border: 10px solid black;
+            
+        }
+        QPushButton:hover {
+            background-color: lightgrey;
+        }
+        """)
+
+        boutonRectangle = QPushButton("Rectangle")
+        boutonRectangle.setFixedSize(130, 130)
+        boutonRectangle.setStyleSheet("""
+        QPushButton {
+            border-radius: 25px;  
+            border: 10px solid black;
+            
+        }
+        QPushButton:hover {
+            background-color: lightgrey;
+        }
+        """)
+
+        boutonCarre = QPushButton("Carre")
+        boutonCarre.setFixedSize(130, 130)
+        boutonCarre.setStyleSheet("""
+        QPushButton {
+            border-radius: 25px;  
+            border: 10px solid black;
+            
+        }
+        QPushButton:hover {
+            background-color: lightgrey;
+        }
+        """)
 
 
-        self.texte_temperature, self.slider_temperature = creer_bloc(
-            "Temperature", 0, 30, "°C"
-        )
 
-        self.texte_viscous, self.slider_viscous = creer_bloc(
-            "Viscous", 0, 1000
-        )
+        formesGeometrique.addWidget(boutonCercle)
+        formesGeometrique.addWidget(boutonRectangle)
+        formesGeometrique.addWidget(boutonCarre)
 
-        self.texte_pression, self.slider_pression = creer_bloc(
-            "Pression", 101.4, 301.4, "kPa", 10
-        )
-
-        self.texte_vitesse, self.slider_vitesse = creer_bloc(
-            "Vitesse", 0, 100, "m/s"
-        )
+        layout_controles.addLayout(boutons)
+        layout_controles.addLayout(formesGeometrique)
+        self.texte_temperature, self.slider_temperature = creer_bloc("Temperature", 0, 30, "°C")
+        self.texte_viscous, self.slider_viscous = creer_bloc("Viscous", 0, 1000)
+        self.texte_pression, self.slider_pression = creer_bloc("Pression", 101.4, 301.4, "kPa", 10)
+        self.texte_vitesse, self.slider_vitesse = creer_bloc("Vitesse", 0, 100, "m/s")
 
         layout_controles.addStretch()
 
         layout_principal.addWidget(panneau, stretch=1)
 
-
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
-        self.timer.start(1000 // 30)
 
     def update_value(self, label, value, unite, facteur):
-
         valeur_reelle = value / facteur
         label.setText(f"{valeur_reelle} {unite}")
 
     def update_simulation(self):
         self.grille.update_valeurs()
         self.scene.grille_3D.update_scene()
+
+    def animerRun(self):
+        self.timer.start(1000 // 30)
+
+    def animerPause(self):
+        self.timer.stop()
+
+    def animerReprendre(self):
+        if not self.timer.isActive():
+            self.timer.start(1000 // 30)
+

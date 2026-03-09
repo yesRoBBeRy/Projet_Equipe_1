@@ -54,13 +54,4 @@ class fondEtoile(QWidget):
         self.animerEtoile(self.etoilesD)
         self.animerEtoile(self.etoilesHB)
 
-def draw_star(painter, x, y, size=1):
-    points = [
-        QPoint(x, y - size),
-        QPoint(x + size // 2, y + size),
-        QPoint(x - size, y // 2),
-        QPoint(x + size, y // 2),
-        QPoint(x - size // 2, y + size)
-    ]
-    polygon = QPolygon(points)
-    painter.drawPolygon(polygon)
+        
