@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
 
         self.resize(1200,650)
 
-        centre = fondEtoile()
+        centre = fondEtoile(self.height(),self.width())
         self.setCentralWidget(centre)
 
 
