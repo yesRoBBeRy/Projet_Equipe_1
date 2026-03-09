@@ -43,11 +43,11 @@ class fondEtoile(QWidget):
         painter.setBrush(QBrush(QColor("white")))
 
         for x, y, vx, vy in self.etoilesG:
-            draw_star(painter, x, y)
+            painter.drawEllipse(x, y, 2, 2)
         for x, y, vx, vy in self.etoilesD:
-            draw_star(painter, x, y)
+            painter.drawEllipse(x, y, 2, 2)
         for x, y, vx, vy in self.etoilesHB:
-            draw_star(painter, x, y)
+            painter.drawEllipse(x, y, 2, 2)
 
     def update_etoiles(self):
         self.animerEtoile(self.etoilesG)
