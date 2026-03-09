@@ -1,8 +1,7 @@
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QColor
 from PySide6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QMainWindow, QWidget,
-    QPushButton, QSlider, QLabel
+    QHBoxLayout, QVBoxLayout, QMainWindow, QWidget, QSlider, QLabel
 )
 
 from fondEtoile import fondEtoile
@@ -19,59 +18,23 @@ class MainWindow(QMainWindow):
 
         police_scientifique = QFont("Consolas", 12)  # monospace, taille 12
 
-        self.resize(1200, 650)
+
+        self.resize(1200,650)
 
         centre = fondEtoile()
         self.setCentralWidget(centre)
 
 
-        self.setStyleSheet("""
-        QMainWindow {
-            background-color: #0b0f1a;
-            font-family: Roboto Mono;
-            font-size: 12pt;
-        }
 
-        QLabel {
-            color: #cfd8ff;
-            font-family: Consolas;
-            font-size: 12pt;
-        }
 
-        QPushButton {
-            background-color: #1c2238;
-            color: white;
-            border: 1px solid #3b4a7a;
-            padding: 6px;
-            font-family: Consolas;
-            font-size: 12pt;
-        }
-
-        QPushButton:hover {
-            background-color: #2b3560;
-        }
-
-        QSlider::groove:horizontal {
-            background: #2a3355;
-            height: 6px;
-        }
-
-        QSlider::handle:horizontal {
-            background: #6fa8ff;
-            width: 12px;
-        }
-        """)
 
         layout_principal = QHBoxLayout(centre)
         layout_principal.setContentsMargins(20, 20, 20, 20)
         layout_principal.setSpacing(25)
 
-        # ===== SCENE 3D =====
+
         scene_container = QWidget()
-        scene_container.setStyleSheet("""
-        background-color: black;
-        border: 3px solid black;
-        """)
+
 
         scene_layout = QVBoxLayout(scene_container)
 
@@ -89,23 +52,23 @@ class MainWindow(QMainWindow):
         def creer_bloc(nom, min_val, max_val, unite="", facteur=1):
             bloc = QVBoxLayout()
 
-            # ligne titre + valeur
+
             ligne = QHBoxLayout()
             label_nom = QLabel(nom)
             label_valeur = QLabel(str(min_val) + " " + unite)
 
-            # Appliquer police scientifique au label de valeur
+
             label_valeur.setFont(police_scientifique)
 
             ligne.addWidget(label_nom)
             ligne.addStretch()
             ligne.addWidget(label_valeur)
 
-            # bouton
-            bouton = QPushButton(nom)
-            bouton.setFont(police_scientifique)  # police scientifique sur bouton
 
-            # slider
+            texte = QLabel(nom)
+            texte.setFont(police_scientifique)
+
+
             slider = QSlider(Qt.Horizontal)
             slider.setRange(int(min_val * facteur), int(max_val * facteur))
 
@@ -115,28 +78,28 @@ class MainWindow(QMainWindow):
             )
 
             bloc.addLayout(ligne)
-            bloc.addWidget(bouton)
+            bloc.addWidget(texte)
             bloc.addWidget(slider)
 
             layout_controles.addLayout(bloc)
 
-            return bouton, slider
+            return texte, slider
 
 
 
-        self.btn_temperature, self.slider_temperature = creer_bloc(
+        self.texte_temperature, self.slider_temperature = creer_bloc(
             "Temperature", 0, 30, "°C"
         )
 
-        self.btn_viscous, self.slider_viscous = creer_bloc(
+        self.texte_viscous, self.slider_viscous = creer_bloc(
             "Viscous", 0, 1000
         )
 
-        self.btn_pression, self.slider_pression = creer_bloc(
+        self.texte_pression, self.slider_pression = creer_bloc(
             "Pression", 101.4, 301.4, "kPa", 10
         )
 
-        self.btn_vitesse, self.slider_vitesse = creer_bloc(
+        self.texte_vitesse, self.slider_vitesse = creer_bloc(
             "Vitesse", 0, 100, "m/s"
         )
 
