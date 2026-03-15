@@ -17,6 +17,8 @@ class Grille:
         }
         self.test_rand()
 
+        self.fps = 30
+
     def test_rand(self):
         forme = self.valeurs["densite"].shape
         self.valeurs["densite"][:] = np.random.uniform(0,1,size=forme)

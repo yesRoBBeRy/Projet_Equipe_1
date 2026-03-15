@@ -11,6 +11,7 @@ class Parametres:
         self.pression = pression
         self.temperature = temperature
         self.grille = grille
+        self.oppose = self.calculer_inverses()
 
         self.F = self._init_distribution()
         self.cxs, self.cys, self.czs, self.poids = self.lattice()
@@ -46,3 +47,13 @@ class Parametres:
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
         x, y, z = np.meshgrid(range(Nx), range(Ny), range(Nz), indexing='ij')
         return self.distance(Nx/4, Ny/2, Nz/2, x, y, z) < 13
+
+    def calculer_inverses(self): # utiliser pour flipper la vitesse
+        oppose = np.zeros(self.NL, dtype=int)
+        for i in range(self.NL):
+            for j in range(self.NL):
+                if (self.cxs[i] == -self.cxs[j] and
+                    self.cys[i] == -self.cys[j] and
+                    self.czs[i] == -self.czs[j]):
+                    oppose[i] = j
+        return oppose

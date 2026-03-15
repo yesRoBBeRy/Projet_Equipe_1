@@ -147,7 +147,7 @@ class MainWindow(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
-        self.timer.start(1000 // 30)
+        self.timer.start(1000 // self.grille.fps)
 
     def update_value(self, label, value, unite, facteur):
 
