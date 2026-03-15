@@ -5,9 +5,11 @@ from PySide6.QtWidgets import (
     QPushButton, QSlider, QLabel
 )
 
-from fondEtoile import fondEtoile
+from src.Backend.Projection import Projection
 from src.Rendering_3D.scene_3D import Scene3D
 from src.grille import Grille
+from src.Backend.Parametres import Parametres
+from src.Backend.Advections import Advections
 
 
 class MainWindow(QMainWindow):
@@ -15,14 +17,13 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.grille = Grille(100, 100, 100)
+        self.grille = Grille(30, 30, 30)
+        self.parametres = Parametres(0.0, 0.0, 0.0, 101.4, 20.0, grille=self.grille)  # add
+        self.advection = Advections(self.parametres)                                     # add
 
         police_scientifique = QFont("Consolas", 12)  # monospace, taille 12
 
         self.resize(1200, 650)
-
-        centre = fondEtoile()
-        self.setCentralWidget(centre)
 
 
         self.setStyleSheet("""
@@ -62,7 +63,7 @@ class MainWindow(QMainWindow):
         }
         """)
 
-        layout_principal = QHBoxLayout(centre)
+        layout_principal = QHBoxLayout()
         layout_principal.setContentsMargins(20, 20, 20, 20)
         layout_principal.setSpacing(25)
 
@@ -76,6 +77,7 @@ class MainWindow(QMainWindow):
         scene_layout = QVBoxLayout(scene_container)
 
         self.scene = Scene3D(scene_container, self.grille)
+        self.visualisation = Projection(self.parametres, self.scene.grille_3D)
 
         scene_layout.addWidget(self.scene.plotter)
 
@@ -147,7 +149,7 @@ class MainWindow(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
-        self.timer.start(1000 // 30)
+        self.timer.start(1000 // self.grille.fps)
 
     def update_value(self, label, value, unite, facteur):
 
@@ -155,5 +157,5 @@ class MainWindow(QMainWindow):
         label.setText(f"{valeur_reelle} {unite}")
 
     def update_simulation(self):
-        self.grille.update_valeurs()
-        self.scene.grille_3D.update_scene()
+        self.advection.mise_a_jour()
+        self.visualisation.mise_a_jour()

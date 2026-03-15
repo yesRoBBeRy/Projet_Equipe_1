@@ -1,5 +1,7 @@
 import numpy as np
 
+from src.Backend.Obstacle import Obstacle
+
 
 class Parametres:
     NL = 27
@@ -11,12 +13,20 @@ class Parametres:
         self.pression = pression
         self.temperature = temperature
         self.grille = grille
+        self.tau = 0.6
+        self.obstacle = Obstacle(self.grille).masque
 
-        self.F = self._init_distribution()
+        Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
+        self.rho = np.ones((Nx, Ny, Nz))
+        self.ux = np.zeros((Nx, Ny, Nz))
+        self.uy = np.zeros((Nx, Ny, Nz))
+        self.uz = np.zeros((Nx, Ny, Nz))
+
         self.cxs, self.cys, self.czs, self.poids = self.lattice()
-        self.obstacle = self.creer_obstacle()
+        self.oppose = self.calculer_inverses()
+        self.F = self._init_distribution()
 
-    # LATTICE
+    # lattice
 
     def lattice(self):
         cxs = np.array([ 0,  0,  1,  1,  1,  0, -1, -1, -1,  0,  0,  1,  1,  1,  0, -1, -1, -1,  0,  0,  1,  1,  1,  0, -1, -1, -1])
@@ -34,15 +44,15 @@ class Parametres:
     def _init_distribution(self):
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
         F = np.ones((Nx, Ny, Nz, self.NL)) + 0.01 * np.random.randn(Nx, Ny, Nz, self.NL)
-        F[:, :, :, 12] = 2.3  # velocite initiale vers la droite
+        F[:, :, :, 12] = 1.5  # velocite initiale vers la droite
         return F
 
-    # obstacle
-
-    def distance(self, x1, y1, z1, x2, y2, z2):
-        return np.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
-
-    def creer_obstacle(self):
-        Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
-        x, y, z = np.meshgrid(range(Nx), range(Ny), range(Nz), indexing='ij')
-        return self.distance(Nx/4, Ny/2, Nz/2, x, y, z) < 13
+    def calculer_inverses(self): # utiliser pour flipper la vitesse
+        oppose = np.zeros(self.NL, dtype=int)
+        for i in range(self.NL):
+            for j in range(self.NL):
+                if (self.cxs[i] == -self.cxs[j] and
+                    self.cys[i] == -self.cys[j] and
+                    self.czs[i] == -self.czs[j]):
+                    oppose[i] = j
+        return oppose

@@ -3,11 +3,9 @@ import numpy as np
 
 class Grille:
     def __init__(self, x, y, z):
-
-        def __init__(self,x,y,z):
-            self.Nx = x
-            self.Ny = y
-            self.Nz = z
+        self.Nx = x
+        self.Ny = y
+        self.Nz = z
 
         self.valeurs = {
             "vx": np.zeros((x, y, z)),
@@ -16,6 +14,8 @@ class Grille:
             "densite": np.ones((x, y, z))
         }
         self.test_rand()
+
+        self.fps = 30
 
     def test_rand(self):
         forme = self.valeurs["densite"].shape
