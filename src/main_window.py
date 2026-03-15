@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.grille = Grille(5, 5, 10)
+        self.grille = Grille(100, 100, 100)
 
         police_scientifique = QFont("Consolas", 12)  # monospace, taille 12
 
