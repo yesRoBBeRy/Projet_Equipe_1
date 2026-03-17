@@ -170,9 +170,10 @@ class MainWindow(QMainWindow):
     def add_prisme(self):
         # TODO: Logique du choix des dimension du prisme
         h = 1
-        l = 1
+        l = 2
+        w = 3
 
-        self.scene.add_prisme(h, l)
+        self.scene.add_prisme(h, l, w)
 
     def add_cylindre(self):
         # TODO: Logique du choix des dimension du prisme
@@ -186,3 +187,6 @@ class MainWindow(QMainWindow):
         c = 1
 
         self.scene.add_cube(c)
+
+    def add_pyramide(self):
+        self.scene.add_pyramide()
