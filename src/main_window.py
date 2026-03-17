@@ -81,22 +81,20 @@ class MainWindow(QMainWindow):
 
         boutonRun = QPushButton("Run")
         boutonPause = QPushButton("Pause")
-        boutonReprendre = QPushButton("Reprendre")
+        bouton_reprendre = QPushButton("Reprendre")
 
         boutons.addWidget(boutonRun)
         boutons.addWidget(boutonPause)
-        boutons.addWidget(boutonReprendre)
+        boutons.addWidget(bouton_reprendre)
 
-        boutonRun.clicked.connect(self.animerRun)
-        boutonPause.clicked.connect(self.animerPause)
-        boutonReprendre.clicked.connect(self.animerReprendre)
+        #boutonRun.clicked.connect(self.animerRun)
+        #boutonPause.clicked.connect(self.animerPause)
+        #boutonReprendre.clicked.connect(self.animerReprendre)
 
-        # TODO les formes a mettre
-
-        formesGeometrique = QHBoxLayout()
-        boutonCercle = QPushButton("Cercle")
-        boutonCercle.setFixedSize(130, 130)  # taille du cercle
-        boutonCercle.setStyleSheet("""
+        formes_geometrique = QHBoxLayout()
+        bouton_sphere = QPushButton("Cercle")
+        bouton_sphere.setFixedSize(130, 130)  # taille du cercle
+        bouton_sphere.setStyleSheet("""
         QPushButton {
             border-radius: 25px;  
             border: 10px solid black;
@@ -107,9 +105,9 @@ class MainWindow(QMainWindow):
         }
         """)
 
-        boutonRectangle = QPushButton("Rectangle")
-        boutonRectangle.setFixedSize(130, 130)
-        boutonRectangle.setStyleSheet("""
+        bouton_prisme = QPushButton("Rectangle")
+        bouton_prisme.setFixedSize(130, 130)
+        bouton_prisme.setStyleSheet("""
         QPushButton {
             border-radius: 25px;  
             border: 10px solid black;
@@ -120,9 +118,9 @@ class MainWindow(QMainWindow):
         }
         """)
 
-        boutonCarre = QPushButton("Carre")
-        boutonCarre.setFixedSize(130, 130)
-        boutonCarre.setStyleSheet("""
+        bouton_cube = QPushButton("Carre")
+        bouton_cube.setFixedSize(130, 130)
+        bouton_cube.setStyleSheet("""
         QPushButton {
             border-radius: 25px;  
             border: 10px solid black;
@@ -133,14 +131,16 @@ class MainWindow(QMainWindow):
         }
         """)
 
+        bouton_sphere.clicked.connect(self.add_sphere)
+        bouton_cube.clicked.connect(self.add_cube)
+        bouton_prisme.clicked.connect(self.add_prisme)
 
-
-        formesGeometrique.addWidget(boutonCercle)
-        formesGeometrique.addWidget(boutonRectangle)
-        formesGeometrique.addWidget(boutonCarre)
+        formes_geometrique.addWidget(bouton_sphere)
+        formes_geometrique.addWidget(bouton_prisme)
+        formes_geometrique.addWidget(bouton_cube)
 
         layout_controles.addLayout(boutons)
-        layout_controles.addLayout(formesGeometrique)
+        layout_controles.addLayout(formes_geometrique)
         self.texte_temperature, self.slider_temperature = creer_bloc("Temperature", 0, 30, "°C")
         self.texte_viscous, self.slider_viscous = creer_bloc("Viscous", 0, 1000)
         self.texte_pression, self.slider_pression = creer_bloc("Pression", 101.4, 301.4, "kPa", 10)
@@ -160,3 +160,29 @@ class MainWindow(QMainWindow):
     def update_simulation(self):
         self.grille.update_valeurs()
         self.scene.grille_3D.update_scene()
+
+    def add_sphere(self):
+        # TODO: Logique du choix des dimensions de la sphère
+        rayon = 1
+
+        self.scene.add_sphere(rayon)
+
+    def add_prisme(self):
+        # TODO: Logique du choix des dimension du prisme
+        h = 1
+        l = 1
+
+        self.scene.add_prisme(h, l)
+
+    def add_cylindre(self):
+        # TODO: Logique du choix des dimension du prisme
+        rayon = 1
+        h = 1
+
+        self.scene.add_cylindre(rayon, h)
+
+    def add_cube(self):
+        # TODO: Logique du choix des dimensions du cube
+        c = 1
+
+        self.scene.add_cube(c)
