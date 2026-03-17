@@ -1,6 +1,6 @@
+from src.Rendering_3D.grille_3D import Grille3D
 import numpy as np
 
-from src.Rendering_3D.grille_3D import Grille3D
 
 import pyvista as pv
 from pyvistaqt import QtInteractor
