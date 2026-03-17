@@ -10,7 +10,7 @@ class Scene3D:
         self.grille = grille
 
         self.grille_3D = Grille3D(self.grille, self.plotter)
-
+        #Ajout du volume dans le plotter
         self.grille_3D.acteur_volume = self.plotter.add_volume(
             self.grille_3D.volume,
             opacity="linear",
