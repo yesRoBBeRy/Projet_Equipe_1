@@ -1,18 +1,21 @@
-from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QFont, QColor
-from PySide6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QMainWindow, QWidget, QSlider, QLabel, QPushButton
-)
+from PySide6.QtCore import QTimer, Qt, QSize
+from PySide6.QtGui import QFont, QColor, QIcon, QPixmap
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QMainWindow, QWidget, QSlider, QLabel, QPushButton
+
 
 from fondEtoile import fondEtoile
 from src.Rendering_3D.scene_3D import Scene3D
 from src.grille import Grille
 
 
+
+
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        self.pause = True
 
         self.grille = Grille(5, 5, 10)
 
@@ -81,20 +84,25 @@ class MainWindow(QMainWindow):
 
         boutonRun = QPushButton("Run")
         boutonPause = QPushButton("Pause")
-        boutonReprendre = QPushButton("Reprendre")
+        boutonReset = QPushButton("Reset")
 
         boutons.addWidget(boutonRun)
         boutons.addWidget(boutonPause)
-        boutons.addWidget(boutonReprendre)
+        boutons.addWidget(boutonReset)
 
         boutonRun.clicked.connect(self.animerRun)
         boutonPause.clicked.connect(self.animerPause)
-        boutonReprendre.clicked.connect(self.animerReprendre)
+        boutonReset.clicked.connect(self.animerReprendre)
 
-        # TODO les formes a mettre
+        # Les formes géométriques que l'utilisateur peuvent choisir
 
-        formesGeometrique = QHBoxLayout()
-        boutonCercle = QPushButton("Cercle")
+        #Formes du haut
+        formesGeometriqueLigneDuHaut = QHBoxLayout()
+
+        image = QPixmap("realSphere.png")
+        boutonCercle = QPushButton("")
+        boutonCercle.setIcon(image)
+        boutonCercle.setIconSize(QSize(100, 100))
         boutonCercle.setFixedSize(130, 130)  # taille du cercle
         boutonCercle.setStyleSheet("""
         QPushButton {
@@ -107,7 +115,11 @@ class MainWindow(QMainWindow):
         }
         """)
 
-        boutonRectangle = QPushButton("Rectangle")
+        imageRectangle = QPixmap("rectangle.png")
+        boutonRectangle = QPushButton("")
+        boutonRectangle.setIcon(imageRectangle)
+        boutonRectangle.setIconSize(QSize(100, 100))
+        boutonRectangle.setIconSize(QSize(100, 100))
         boutonRectangle.setFixedSize(130, 130)
         boutonRectangle.setStyleSheet("""
         QPushButton {
@@ -120,7 +132,11 @@ class MainWindow(QMainWindow):
         }
         """)
 
-        boutonCarre = QPushButton("Carre")
+        imageCarre = QPixmap("cube.png")
+        boutonCarre = QPushButton("")
+        boutonCarre.setIcon(imageCarre)
+        boutonCarre.setIconSize(QSize(100, 100))
+        boutonCarre.setIconSize(QSize(100, 100))
         boutonCarre.setFixedSize(130, 130)
         boutonCarre.setStyleSheet("""
         QPushButton {
@@ -133,14 +149,70 @@ class MainWindow(QMainWindow):
         }
         """)
 
+        formesGeometriqueLigneDuHaut.addWidget(boutonCercle)
+        formesGeometriqueLigneDuHaut.addWidget(boutonRectangle)
+        formesGeometriqueLigneDuHaut.addWidget(boutonCarre)
 
 
-        formesGeometrique.addWidget(boutonCercle)
-        formesGeometrique.addWidget(boutonRectangle)
-        formesGeometrique.addWidget(boutonCarre)
+        #Formes du bas
+        formesGeometriqueLigneDuBas = QHBoxLayout()
+
+        imageCylindre = QPixmap("cylindre.png")
+        boutonCylindre = QPushButton("")
+        boutonCylindre.setIcon(imageCylindre)
+        boutonCylindre.setIconSize(QSize(100, 100))
+        boutonCylindre.setFixedSize(130, 130)  # taille du cercle
+        boutonCylindre.setStyleSheet("""
+               QPushButton {
+                   border-radius: 25px;  
+                   border: 10px solid black;
+
+               }
+               QPushButton:hover {
+                   background-color: lightgrey;
+               }
+               """)
+
+
+        imagePyramid = QPixmap("prismeTriangulaire.png")
+        boutonTriangle = QPushButton("")
+        boutonTriangle.setIcon(imagePyramid)
+        boutonTriangle.setIconSize(QSize(100, 100))
+        boutonTriangle.setFixedSize(130, 130)
+        boutonTriangle.setStyleSheet("""
+               QPushButton {
+                   border-radius: 25px;  
+                   border: 10px solid black;
+
+               }
+               QPushButton:hover {
+                   background-color: lightgrey;
+               }
+               """)
+
+        boutonParralelogramme = QPushButton("")
+        boutonParralelogramme.setFixedSize(130, 130)
+        boutonParralelogramme.setStyleSheet("""
+               QPushButton {
+                   border-radius: 25px;  
+                   border: 10px solid black;
+
+               }
+               QPushButton:hover {
+                   background-color: lightgrey;
+               }
+               """)
+
+        formesGeometriqueLigneDuBas.addWidget(boutonCylindre)
+        formesGeometriqueLigneDuBas.addWidget(boutonTriangle)
+        formesGeometriqueLigneDuBas.addWidget(boutonParralelogramme)
+
 
         layout_controles.addLayout(boutons)
-        layout_controles.addLayout(formesGeometrique)
+        layout_controles.addLayout(formesGeometriqueLigneDuHaut)
+        layout_controles.setSpacing(5)
+        layout_controles.addLayout(formesGeometriqueLigneDuBas)
+
         self.texte_temperature, self.slider_temperature = creer_bloc("Temperature", 0, 30, "°C")
         self.texte_viscous, self.slider_viscous = creer_bloc("Viscous", 0, 1000)
         self.texte_pression, self.slider_pression = creer_bloc("Pression", 101.4, 301.4, "kPa", 10)
@@ -162,10 +234,16 @@ class MainWindow(QMainWindow):
         self.scene.grille_3D.update_scene()
 
     def animerRun(self):
+
         self.timer.start(1000 // 30)
 
     def animerPause(self):
-        self.timer.stop()
+        if self.pause:
+            self.timer.start(1000 // 30)
+        elif not self.pause:
+            self.timer.stop()
+
+        self.pause = not self.pause
 
     def animerReprendre(self):
         if not self.timer.isActive():
