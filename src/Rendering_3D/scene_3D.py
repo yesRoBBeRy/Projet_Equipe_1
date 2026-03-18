@@ -9,11 +9,14 @@ from pyvistaqt import QtInteractor
 
 
 class Scene3D(QObject):
+
     forme = Signal(object)
+
     def __init__(self, parent, grille, /):
         super().__init__(parent)
         self.plotter = QtInteractor(parent)
 
+        #Permettre à l'utilisateur de sélectionner une forme
         self.plotter.enable_mesh_picking(
             callback=self.on_pick,
             use_actor=True,
@@ -58,6 +61,7 @@ class Scene3D(QObject):
         self.parametres_formes[acteur] = {"type" : "prisme", "params": {"h" : h, "l" : l, "w" : w}}
 
     def add_pyramide(self, h):
+        #Code généré par claude.ai
         base = h / 2
         base_vertices = np.array([
             [base, 0, 0],
@@ -86,11 +90,14 @@ class Scene3D(QObject):
 
 
     def on_pick(self, acteur):
+        #Définir l'acteur (la mesh) sélectionnée
+        #Émettre un signal vers main_window.py pour ouvrir la page des paramètres
         if acteur in self.acteurs_mesh:
             self.acteur_current = acteur
             self.forme.emit(acteur)
 
     def _enregistrer(self, mesh):
+        #Enregister les paramètres de la forme à la création
         acteur = self.plotter.add_mesh(mesh)
         self.acteurs_mesh[acteur] = mesh
         self.point_og[acteur] = mesh.points.copy()

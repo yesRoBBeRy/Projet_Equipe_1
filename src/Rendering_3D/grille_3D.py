@@ -24,6 +24,7 @@ class Grille3D:
         self.acteur_volume = None
 
     def update_scene(self):
+        #Update de l'opacité des cellules de la grille
         self.volume.cell_data["densite"] = self.grille.valeurs["densite"].flatten(order="F")
         self.volume= self.volume.cell_data_to_point_data()
 
