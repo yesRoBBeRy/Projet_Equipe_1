@@ -70,7 +70,7 @@ class Scene3D:
 
     def set_center(self):
         return (
-            float(np.random.uniform(0, 50)),
-            float(np.random.uniform(0, 50)),
-            float(np.random.uniform(0, 100))
+            float(np.random.uniform(0, 20)),
+            float(np.random.uniform(0, 20)),
+            float(np.random.uniform(0, 20))
         )
