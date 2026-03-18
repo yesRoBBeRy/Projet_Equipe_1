@@ -84,15 +84,15 @@ class MainWindow(QMainWindow):
 
         boutonRun = QPushButton("Run")
         boutonPause = QPushButton("Pause")
-        boutonReset = QPushButton("Reset")
+        bouton_reprendre = QPushButton("Reprendre")
 
         boutons.addWidget(boutonRun)
         boutons.addWidget(boutonPause)
-        boutons.addWidget(boutonReset)
+        boutons.addWidget(bouton_reprendre)
 
-        boutonRun.clicked.connect(self.animerRun)
-        boutonPause.clicked.connect(self.animerPause)
-        boutonReset.clicked.connect(self.animerReprendre)
+        #boutonRun.clicked.connect(self.animerRun)
+        #boutonPause.clicked.connect(self.animerPause)
+        #boutonReprendre.clicked.connect(self.animerReprendre)
 
         # Les formes géométriques que l'utilisateur peuvent choisir
 
@@ -173,6 +173,9 @@ class MainWindow(QMainWindow):
                }
                """)
 
+        bouton_sphere.clicked.connect(self.add_sphere)
+        bouton_cube.clicked.connect(self.add_cube)
+        bouton_prisme.clicked.connect(self.add_prisme)
 
         imagePyramid = QPixmap("prismeTriangulaire.png")
         boutonTriangle = QPushButton("")
@@ -233,6 +236,19 @@ class MainWindow(QMainWindow):
         self.grille.update_valeurs()
         self.scene.grille_3D.update_scene()
 
+    def add_sphere(self):
+        # TODO: Logique du choix des dimensions de la sphère
+        rayon = 1
+
+        self.scene.add_sphere(rayon)
+
+    def add_prisme(self):
+        # TODO: Logique du choix des dimension du prisme
+        h = 1
+        l = 2
+        w = 3
+
+        self.scene.add_prisme(h, l, w)
     def animerRun(self):
 
         self.timer.start(1000 // 30)
@@ -244,8 +260,23 @@ class MainWindow(QMainWindow):
             self.timer.stop()
 
         self.pause = not self.pause
+    def add_cylindre(self):
+        # TODO: Logique du choix des dimension du prisme
+        rayon = 1
+        h = 1
+
+        self.scene.add_cylindre(rayon, h)
+
 
     def animerReprendre(self):
         if not self.timer.isActive():
             self.timer.start(1000 // 30)
 
+    def add_cube(self):
+        # TODO: Logique du choix des dimensions du cube
+        c = 1
+
+        self.scene.add_cube(c)
+
+    def add_pyramide(self):
+        self.scene.add_pyramide()
