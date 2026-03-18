@@ -3,6 +3,9 @@ import numpy as np
 
 class Grille:
     def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
         self.valeurs = {
             "vx": np.zeros((x, y, z)),
             "vy": np.zeros((x, y, z)),
