@@ -23,6 +23,8 @@ class Scene3D(QObject):
 
         self.acteurs_mesh = {}
         self.point_og = {}
+        self.parametres_formes = {}
+        self.pos_current = {}
         self.acteur_current = None
 
         self.grille = grille
@@ -40,16 +42,20 @@ class Scene3D(QObject):
         self.plotter.show()
 
     def add_sphere(self, rayon):
-        self._enregistrer(pv.Sphere(center=(0,0,0), radius=rayon))
+        acteur = self._enregistrer(pv.Sphere(center=(0,0,0), radius=rayon))
+        self.parametres_formes[acteur] = {"type" : "sphere", "params": {"rayon" : rayon}}
 
     def add_cube(self, c):
-        self._enregistrer(pv.Cube(center=(0,0,0), x_length=c, y_length=c, z_length=c))
+        acteur = self._enregistrer(pv.Cube(center=(0,0,0), x_length=c, y_length=c, z_length=c))
+        self.parametres_formes[acteur] = {"type" : "cube", "params": {"c" : c}}
 
     def add_cylindre(self, rayon, l):
-        self._enregistrer(pv.Cylinder(center=(0,0,0), radius=rayon, height=l))
+        acteur = self._enregistrer(pv.Cylinder(center=(0,0,0), radius=rayon, height=l))
+        self.parametres_formes[acteur] = {"type" : "cylindre", "params": {"l" : l}}
 
-    def add_prisme(self, h, l, w, x, y, z):
-        self._enregistrer(pv.Cube(center=(0,0,0), x_length=h, y_length=l, z_length=w))
+    def add_prisme(self, h, l, w):
+        acteur = self._enregistrer(pv.Cube(center=(0,0,0), x_length=h, y_length=l, z_length=w))
+        self.parametres_formes[acteur] = {"type" : "prisme", "params": {"h" : h, "l" : l, "w" : w}}
 
     def add_pyramide(self, h):
         base = h / 2
@@ -71,10 +77,13 @@ class Scene3D(QObject):
             [3, 2, 0, 3],
         ])
 
-        self._enregistrer(pv.PolyData(points, faces))
+        acteur = self._enregistrer(pv.PolyData(points, faces))
+        self.parametres_formes[acteur] = {"type" : "pyramide", "params": {"h" : h}}
 
     def add_fleche(self, l):
-        self._enregistrer(pv.Arrow(center=(0,0,0), x_length=l))
+        acteur = self._enregistrer(pv.Arrow(center=(0, 0, 0), x_length=l))
+        self.parametres_formes[acteur] = {"type" : "fleche", "params": {"l" : l}}
+
 
     def on_pick(self, acteur):
         if acteur in self.acteurs_mesh:
@@ -86,3 +95,16 @@ class Scene3D(QObject):
         self.acteurs_mesh[acteur] = mesh
         self.point_og[acteur] = mesh.points.copy()
         self.plotter.render()
+        return acteur
+
+    def deplacement(self, x, y, z):
+        if self.acteur_current is None:
+            return
+        mesh = self.acteurs_mesh[self.acteur_current]
+        point_origine = self.point_og[self.acteur_current]
+        mesh.points[:] = point_origine + (x, y, z)
+        self.pos_current[self.acteur_current] = (x, y, z)
+        self.plotter.render()
+
+    def changer_dimensions(self):
+        pass
