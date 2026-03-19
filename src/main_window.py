@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QMainWindow, QWidget, QSlider, QLabel, QPushButton
 )
@@ -157,6 +157,7 @@ class MainWindow(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
+        self.timer.start(1000 // self.grille.fps)
 
     def update_value(self, label, value, unite, facteur):
         valeur_reelle = value / facteur
