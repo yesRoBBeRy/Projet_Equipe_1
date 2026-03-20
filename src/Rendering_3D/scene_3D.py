@@ -85,7 +85,8 @@ class Scene3D(QObject):
         return acteur
 
     def deplacement(self, x, y, z):
-        if self.acteur_current is None:
+        if self.acteur_current is None or self.plotter.picked_mesh is None:
+            self.acteur_current = None
             return
         mesh = self.acteurs_mesh[self.acteur_current]
         point_origine = self.point_og[self.acteur_current]
@@ -94,42 +95,46 @@ class Scene3D(QObject):
         self.plotter.render()
 
     def changer_dimensions(self, **kwargs):
-        if self.acteur_current is None:
+        if self.acteur_current is None or self.plotter.picked_mesh is None:
+            self.acteur_current = None
             return
 
         acteur = self.acteur_current
         params = self.parametres_formes[acteur]
         params["params"].update(kwargs)
 
-        new_mesh = self._creer_mesh(params, self.pos_current[acteur])
+        new_mesh = self._creer_mesh(params)
         self.acteurs_mesh[acteur].copy_from(new_mesh)
+        self.point_og[acteur] = self.acteurs_mesh[acteur].points.copy()
+        position = self.pos_current[acteur]
+        self.deplacement(position[0], position[1], position[2])
 
 
-    def _creer_mesh(self, params, pos):
+    def _creer_mesh(self, params):
         if params["type"] == "sphere":
             rayon = params["params"]["rayon"]
-            new_mesh = pv.Sphere(center=pos, radius=rayon)
+            new_mesh = pv.Sphere(center=(0,0,0), radius=rayon)
             return new_mesh
         elif params["type"] == "cube":
             c = params["params"]["c"]
-            new_mesh = pv.Cube(center=pos, x_length=c, y_length=c, z_length=c)
+            new_mesh = pv.Cube(center=(0,0,0), x_length=c, y_length=c, z_length=c)
             return new_mesh
         elif params["type"] == "cylindre":
             rayon = params["params"]["rayon"]
             h = params["params"]["h"]
-            return pv.Cylinder(center=pos, radius=rayon, height=h)
+            return pv.Cylinder(center=(0,0,0), radius=rayon, height=h)
         elif params["type"] == "prisme":
             l = params["params"]["l"]
             w = params["params"]["w"]
             h = params["params"]["h"]
-            return pv.Cube(center=pos, x_length=l, y_length=h, z_length=w)
+            return pv.Cube(center=(0,0,0), x_length=l, y_length=h, z_length=w)
         elif params["type"] == "pyramide":
             h = params["params"]["h"]
-            return self._creer_pyramide(h, pos)
+            return self._creer_pyramide(h, (0,0,0))
         elif params["type"] == "fleche":
             l = params["params"]["l"]
             w = params["params"]["w"]
-            return pv.Arrow(center=pos, x_length=l, y_length=w)
+            return pv.Arrow(center=(0,0,0), x_length=l, y_length=w)
         return None
 
     def _creer_pyramide(self, h, pos):
