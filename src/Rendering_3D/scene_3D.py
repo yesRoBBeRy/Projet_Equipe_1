@@ -40,6 +40,7 @@ class Scene3D(QObject):
             opacity="linear",
             cmap="Greys"
         )
+        self.grille_3D.acteur_volume.SetPickable(False)
         self.plotter.show()
 
     def add_sphere(self, rayon):
@@ -96,29 +97,13 @@ class Scene3D(QObject):
         if self.acteur_current is None:
             return
 
-        print(kwargs)
         acteur = self.acteur_current
         params = self.parametres_formes[acteur]
-        print(params)
         params["params"].update(kwargs)
-        print(params)
 
-        self.plotter.remove_actor(acteur)
-        del self.acteurs_mesh[acteur]
-        del self.point_og[acteur]
+        new_mesh = self._creer_mesh(params, self.pos_current[acteur])
+        self.acteurs_mesh[acteur].copy_from(new_mesh)
 
-        current_position = self.pos_current[self.acteur_current]
-        del self.pos_current[acteur]
-
-        new_mesh = self._creer_mesh(params, current_position)
-        new_acteur = self._enregistrer(new_mesh)
-
-        self.parametres_formes[new_acteur] = params
-        self.acteur_current = new_acteur
-
-        self.plotter.picker.RemoveAllObservers()
-
-        self.deplacement(current_position[0], current_position[1], current_position[2])
 
     def _creer_mesh(self, params, pos):
         if params["type"] == "sphere":
