@@ -26,6 +26,7 @@ class Scene3D(QObject):
         self.point_og = {}
         self.parametres_formes = {}
         self.pos_current = {}
+        self.pos_max = {}
         self.acteur_current = None
 
         self.grille = grille
@@ -48,7 +49,10 @@ class Scene3D(QObject):
         self.parametres_formes[acteur] = {"type": "sphere", "params": {"rayon": rayon}}
 
     def add_cube(self, c):
-        acteur = self._enregistrer(pv.Cube(center=(0,0,0), x_length=c, y_length=c, z_length=c))
+        print("ya")
+        mesh = pv.Cube(center=(0,0,0), x_length=c, y_length=c, z_length=c)
+        acteur = self._enregistrer(mesh)
+        self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "cube", "params": {"c": c}}
 
     def add_cylindre(self, rayon, l):
@@ -65,7 +69,8 @@ class Scene3D(QObject):
         self.parametres_formes[acteur] = {"type": "pyramide", "params": {"h": h}}
 
     def add_fleche(self, l, w):
-        acteur = self._enregistrer(pv.Arrow(center=(0, 0, 0), x_length=l, y_length=w))
+        mesh = pv.Arrow(center=(0, 0, 0), x_length=l, y_length=w)
+        acteur = self._enregistrer(mesh)
         self.parametres_formes[acteur] = {"type": "fleche", "params": {"l": l, "w": w}}
 
     def on_pick(self, acteur):
@@ -160,3 +165,13 @@ class Scene3D(QObject):
             [3, 2, 0, 3],
         ])
         return pv.PolyData(points, faces)
+
+    def get_bounds(self, mesh, acteur):
+        bounds = mesh.bounds
+        x = bounds[1] - bounds[0]
+        y = bounds[3] - bounds[2]
+        z = bounds[5] - bounds[4]
+
+        self.pos_max[acteur] = {"x": x, "y": y, "z": z, "centre" : mesh.center}
+        print(self.pos_max[acteur])
+
