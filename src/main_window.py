@@ -3,7 +3,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QMainWindow, QWidget, QSlider, QLabel, QPushButton
 )
-
+from src.fondEtoile import fondEtoile
 from src.Backend.Projection import Projection
 from src.Rendering_3D.scene_3D import Scene3D
 from src.grille import Grille
@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.grille = Grille(30, 30, 30)
+        self.grille = Grille(50, 50, 50)
         self.parametres = Parametres(0.0, 0.0, 0.0, 101.4, 20.0, grille=self.grille)  # add
         self.advection = Advections(self.parametres)                                     # add
 
@@ -163,12 +163,9 @@ class MainWindow(QMainWindow):
         valeur_reelle = value / facteur
         label.setText(f"{valeur_reelle} {unite}")
 
-    def update_simulation(self):
-        self.grille.update_valeurs()
-        self.scene.grille_3D.update_scene()
-
     def animerRun(self):
-        self.timer.start(1000 // 30)
+        self.visualisation.frame_count = 0  # Restart growth
+        self.visualisation.grille_3D.plotter.set_background("black")
 
     def animerPause(self):
         self.timer.stop()
@@ -177,6 +174,6 @@ class MainWindow(QMainWindow):
         if not self.timer.isActive():
             self.timer.start(1000 // 30)
 
-
+    def update_simulation(self):
         self.advection.mise_a_jour()
-        self.visualisation.mise_a_jour()
+        self.visualisation.afficher_streamlines()

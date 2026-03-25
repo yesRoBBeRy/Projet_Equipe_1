@@ -14,6 +14,7 @@ class Scene3D:
         self.grille_3D.acteur_volume = self.plotter.add_volume(
             self.grille_3D.volume,
             opacity="linear",
-            cmap="Greys"
+            cmap="Greys",
+            opacity_unit_distance=100  # makes it very transparent
         )
         self.plotter.show()

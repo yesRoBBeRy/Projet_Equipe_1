@@ -13,7 +13,7 @@ class Parametres:
         self.pression = pression
         self.temperature = temperature
         self.grille = grille
-        self.tau = 0.6
+        self.tau = 0.6 #viscosite
         self.obstacle = Obstacle(self.grille).masque
 
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
@@ -25,6 +25,7 @@ class Parametres:
         self.cxs, self.cys, self.czs, self.poids = self.lattice()
         self.oppose = self.calculer_inverses()
         self.F = self._init_distribution()
+        self.F_inlet = self.F[0, :, :, :].copy()
 
     # lattice
 
@@ -43,8 +44,15 @@ class Parametres:
 
     def _init_distribution(self):
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
-        F = np.ones((Nx, Ny, Nz, self.NL)) + 0.01 * np.random.randn(Nx, Ny, Nz, self.NL)
-        F[:, :, :, 12] = 1.5  # velocite initiale vers la droite
+        F = np.ones((Nx, Ny, Nz, self.NL))
+
+        # 1. Fill the whole grid with a tiny rightward breeze
+        # (index 12 is usually the +X direction in D3Q27)
+        F[:, :, :, 12] = 1.05
+
+        # 2. Strong Inlet force at the very left wall
+        F[0:2, :, :, 12] = 2.5
+
         return F
 
     def calculer_inverses(self): # utiliser pour flipper la vitesse

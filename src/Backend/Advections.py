@@ -33,28 +33,40 @@ class Advections:
         self.parametres.F = F
 
     # Variables du fluide
-    def calculer_densite(self):
-        return np.sum(self.parametres.F, axis=3)
-
-    def calculer_momentum(self):
+    def calculer_variables_macroscopiques(self):
         F = self.parametres.F
-        rho = self.calculer_densite()
-        cxs = self.parametres.cxs[np.newaxis, np.newaxis, np.newaxis, :]
-        cys = self.parametres.cys[np.newaxis, np.newaxis, np.newaxis, :]
-        czs = self.parametres.czs[np.newaxis, np.newaxis, np.newaxis, :]
-        ux = np.sum(F * cxs, axis=3) / rho
-        uy = np.sum(F * cys, axis=3) / rho
-        uz = np.sum(F * czs, axis=3) / rho
-        return ux, uy, uz
+        self.parametres.rho = np.sum(F, axis=3)
+        rho_inv = 1.0 / np.maximum(self.parametres.rho, 0.0001)
+
+        # A direct dot product is often faster than einsum for this specific shape
+        # We reshape F to (N_voxels, 27) and dot it with the lattice vectors (27,)
+        flat_F = F.reshape(-1, 27)
+        self.parametres.ux = (flat_F @ self.parametres.cxs).reshape(F.shape[:3]) * rho_inv
+        self.parametres.uy = (flat_F @ self.parametres.cys).reshape(F.shape[:3]) * rho_inv
+        self.parametres.uz = (flat_F @ self.parametres.czs).reshape(F.shape[:3]) * rho_inv
 
     def mise_a_jour(self):
+        # 1. Stream (Movement)
         self.calculer_velocite()
+
+        # 2. Force Inlet (The Fan)
+        self.parametres.F[0, :, :, :] = self.parametres.F_inlet
+
+        # 3. Obstacle Bounce-Back
         self.appliquer_inverse()
 
-        self.parametres.rho = self.calculer_densite()
-        self.parametres.ux, self.parametres.uy, self.parametres.uz = self.calculer_momentum()
+        # 4. NEW: Optimized Macroscopic Variables
+        self.calculer_variables_macroscopiques()
 
+        # 5. Collision (Physics)
         self.collisions.calculer_collisions()
 
+        # 6. Push to renderer
         self.parametres.grille.valeurs["densite"] = self.parametres.rho
-        self.parametres.rho = np.maximum(self.calculer_densite(), 0.0001)
+
+    def check_stabilite(self):
+        if np.isnan(self.parametres.ux).any():
+            print("!!! SIMULATION EXPLODED: NaN detected !!!")
+            print("Try: 1. Reducing Inlet Speed | 2. Increasing Tau (Viscosity)")
+            return False
+        return True
