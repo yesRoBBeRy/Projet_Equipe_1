@@ -3,6 +3,7 @@ import numpy as np
 
 class Grille:
     def __init__(self, x, y, z):
+        self.dimensions = np.array([x,y,z])
         self.x = x
         self.y = y
         self.z = z
