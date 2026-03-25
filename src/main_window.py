@@ -4,7 +4,9 @@ from src.grille import Grille
 
 
 
-from PySide6.QtWidgets import QMainWindow, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QSlider
+
+
+from PySide6.QtWidgets import QMainWindow, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStackedWidget
 from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFont, QPixmap
 
@@ -13,11 +15,8 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.pause = True
-
         self.grille = Grille(5, 5, 10)
-
         self.police_scientifique = QFont("Consolas", 12)
-
         self.resize(1200, 650)
 
         self.centre = QWidget()
@@ -33,9 +32,20 @@ class MainWindow(QMainWindow):
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
         self.layout_principal.addWidget(self.scene_containerScene, stretch=3)
 
+        self.stack = QStackedWidget()
+
         self.panneau = QWidget()
         self.layout_controles = QVBoxLayout(self.panneau)
         self.layout_controles.setSpacing(10)
+
+        self.scene2_container = QWidget()
+        self.scene2_layout = QVBoxLayout(self.scene2_container)
+        self.bouton_confirmer = QPushButton("confirmer")
+        self.bouton_confirmer.clicked.connect(lambda: self.stack.setCurrentIndex(0))
+        self.scene2_layout.addWidget(self.bouton_confirmer)
+
+        self.stack.addWidget(self.panneau)
+        self.stack.addWidget(self.scene2_container)
 
         def creer_bloc(nom, min_val, max_val, unite="", facteur=1):
             self.bloc = QVBoxLayout()
@@ -79,18 +89,18 @@ class MainWindow(QMainWindow):
         self.bouton_sphere.setIconSize(QSize(100, 100))
         self.bouton_sphere.setFixedSize(130, 130)
         self.bouton_sphere.setStyleSheet("""
-            QPushButton { border-radius: 25px; border: 6px solid black; }
-            QPushButton:hover { background-color: orange; }
+            QPushButton { border-radius: 25px; border: 6x solid black; }
+            QPushButton:hover { background-color: black; }
         """)
 
         self.image_rectangle = QPixmap("rectangle.png")
-        self.bouton_prisme = QPushButton("")
-        self.bouton_prisme.setIcon(self.image_rectangle)
-        self.bouton_prisme.setIconSize(QSize(100, 100))
-        self.bouton_prisme.setFixedSize(130, 130)
-        self.bouton_prisme.setStyleSheet("""
-             QPushButton { border-radius: 25px; border: 6px solid black; }
-            QPushButton:hover { background-color: orange; }
+        self.bouton_rectangle = QPushButton("")
+        self.bouton_rectangle.setIcon(self.image_rectangle)
+        self.bouton_rectangle.setIconSize(QSize(100, 100))
+        self.bouton_rectangle.setFixedSize(130, 130)
+        self.bouton_rectangle.setStyleSheet("""
+            QPushButton { border-radius: 25px; border: 6x solid black; }
+            QPushButton:hover { background-color: yellow; }
         """)
 
         self.image_carre = QPixmap("cube.png")
@@ -99,12 +109,12 @@ class MainWindow(QMainWindow):
         self.bouton_cube.setIconSize(QSize(100, 100))
         self.bouton_cube.setFixedSize(130, 130)
         self.bouton_cube.setStyleSheet("""
-             QPushButton { border-radius: 25px; border: 6px solid black; }
-            QPushButton:hover { background-color: orange; }
+             QPushButton { border-radius: 25px; border: 6x solid black; }
+            QPushButton:hover { background-color: blue; }
         """)
 
         self.formesGeometriqueLigneDuHaut.addWidget(self.bouton_sphere)
-        self.formesGeometriqueLigneDuHaut.addWidget(self.bouton_prisme)
+        self.formesGeometriqueLigneDuHaut.addWidget(self.bouton_rectangle)
         self.formesGeometriqueLigneDuHaut.addWidget(self.bouton_cube)
 
         self.formesGeometriqueLigneDuBas = QHBoxLayout()
@@ -115,34 +125,43 @@ class MainWindow(QMainWindow):
         self.bouton_cylindre.setIconSize(QSize(100, 100))
         self.bouton_cylindre.setFixedSize(130, 130)
         self.bouton_cylindre.setStyleSheet("""
-             QPushButton { border-radius: 25px; border: 6px solid black; }
+            QPushButton { border-radius: 25px; border: 6x solid black; }
             QPushButton:hover { background-color: orange; }
         """)
 
-        self.bouton_sphere.clicked.connect(self.add_sphere)
-        self.bouton_cube.clicked.connect(self.add_cube)
-        self.bouton_prisme.clicked.connect(self.add_prisme)
-
-        self.image_pyramide = QPixmap("prismeTriangulaire.png")
+        self.image_pyramide = QPixmap("Pyramide.png")
         self.bouton_pyramide = QPushButton("")
         self.bouton_pyramide.setIcon(self.image_pyramide)
         self.bouton_pyramide.setIconSize(QSize(100, 100))
         self.bouton_pyramide.setFixedSize(130, 130)
         self.bouton_pyramide.setStyleSheet("""
-            QPushButton { border-radius: 25px; border: 6px solid black; }
-            QPushButton:hover { background-color: orange; }
+            QPushButton { border-radius: 25px; border: 6x solid black; }
+            QPushButton:hover { background-color: red; }
         """)
 
+        self.image_fleche = QPixmap("flèche3D.png")
         self.bouton_parralelogramme = QPushButton("")
+        self.bouton_parralelogramme.setIcon(self.image_fleche)
+        self.bouton_parralelogramme.setIconSize(QSize(100, 100))
         self.bouton_parralelogramme.setFixedSize(130, 130)
         self.bouton_parralelogramme.setStyleSheet("""
-             QPushButton { border-radius: 25px; border: 6px solid black; }
+            QPushButton { border-radius: 25px; border: 6x solid black; }
             QPushButton:hover { background-color: orange; }
         """)
 
         self.formesGeometriqueLigneDuBas.addWidget(self.bouton_cylindre)
         self.formesGeometriqueLigneDuBas.addWidget(self.bouton_pyramide)
         self.formesGeometriqueLigneDuBas.addWidget(self.bouton_parralelogramme)
+
+
+        self.bouton_sphere.clicked.connect(self.add_sphere)
+        self.bouton_sphere.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        self.bouton_sphere.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        self.bouton_cube.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        self.bouton_rectangle.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        self.bouton_cylindre.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        self.bouton_pyramide.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        self.bouton_parralelogramme.clicked.connect(lambda: self.stack.setCurrentIndex(1))
 
         self.layout_controles.addLayout(self.boutons)
         self.layout_controles.addLayout(self.formesGeometriqueLigneDuHaut)
@@ -155,7 +174,7 @@ class MainWindow(QMainWindow):
         self.texte_vitesse, self.slider_vitesse = creer_bloc("Vitesse", 0, 100, "m/s")
 
         self.layout_controles.addStretch()
-        self.layout_principal.addWidget(self.panneau, stretch=1)
+        self.layout_principal.addWidget(self.stack, stretch=1)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
@@ -169,8 +188,7 @@ class MainWindow(QMainWindow):
         self.scene.grille_3D.update_scene()
 
     def add_sphere(self):
-        rayon = 1
-        self.scene.add_sphere(rayon)
+        print("penis")
 
     def add_prisme(self):
         h = 1
@@ -201,18 +219,24 @@ class MainWindow(QMainWindow):
     def animerReset(self):
         self.timer.stop()
         self.pause = True
-        self.boutonRun.setText("Play")
+
+        self.boutonRun.setText("Clique moi!")
         self.boutonRun.setStyleSheet("""
-            QPushButton { background-color: green; }
+            QPushButton { background-color: lightgrey; }
         """)
 
         self.scene.plotter.close()
         self.scene_layoutScene3D.removeWidget(self.scene.plotter)
         self.scene.plotter.deleteLater()
 
-        self.grille = Grille(5,5,10)
+        self.grille = Grille(5, 5, 10)
         self.scene = Scene3D(self.scene_containerScene, self.grille)
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
+
+        self.slider_temperature.setValue(0)
+        self.slider_viscous.setValue(0)
+        self.slider_pression.setValue(101.4)
+        self.slider_vitesse.setValue(0)
 
     def add_cube(self):
         c = 1
@@ -220,3 +244,4 @@ class MainWindow(QMainWindow):
 
     def add_pyramide(self):
         self.scene.add_pyramide()
+
