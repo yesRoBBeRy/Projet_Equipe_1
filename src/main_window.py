@@ -1,229 +1,283 @@
 from src.Rendering_3D.scene_3D import Scene3D
 from src.grille import Grille
-
-
-
-
-
-
 from PySide6.QtWidgets import QMainWindow, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStackedWidget
 from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFont, QPixmap
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.pause = True
+        self.forme_selectionnee = None
         self.grille = Grille(5, 5, 10)
         self.police_scientifique = QFont("Consolas", 12)
         self.resize(1200, 650)
 
         self.centre = QWidget()
         self.setCentralWidget(self.centre)
-
         self.layout_principal = QHBoxLayout(self.centre)
-        self.layout_principal.setContentsMargins(20, 20, 20, 20)
-        self.layout_principal.setSpacing(25)
 
+        # --- Scene 3D ---
         self.scene_containerScene = QWidget()
         self.scene_layoutScene3D = QVBoxLayout(self.scene_containerScene)
         self.scene = Scene3D(self.scene_containerScene, self.grille)
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
         self.layout_principal.addWidget(self.scene_containerScene, stretch=3)
 
+        # --- Stack pour panneau / édition ---
         self.stack = QStackedWidget()
+        self.forme_en_scene = None
 
+        # --- Panneau principal ---
         self.panneau = QWidget()
         self.layout_controles = QVBoxLayout(self.panneau)
-        self.layout_controles.setSpacing(10)
 
+        self.boutons = QHBoxLayout()
+        self.boutonRun = QPushButton("Commencer la simulation")
+        self.bouton_reset = QPushButton("Reset")
+        self.boutons.addWidget(self.boutonRun)
+        self.boutons.addWidget(self.bouton_reset)
+        self.boutonRun.clicked.connect(self.animerRun)
+        self.bouton_reset.clicked.connect(self.animerReset)
+        self.layout_controles.addLayout(self.boutons)
+
+        # --- Boutons formes ---
+        self.formesGeometriqueLigneDuHaut = QHBoxLayout()
+        self.formesGeometriqueLigneDuBas = QHBoxLayout()
+
+        formes_config = [
+            ("realSphere.png", "sphere", "red", self.formesGeometriqueLigneDuHaut),
+            ("prisme.png", "prisme", "red", self.formesGeometriqueLigneDuHaut),
+            ("cube.png", "cube", "red", self.formesGeometriqueLigneDuHaut),
+            ("cylindre.png", "cylindre", "red", self.formesGeometriqueLigneDuBas),
+            ("Pyramide.png", "pyramide", "red", self.formesGeometriqueLigneDuBas),
+            ("fleche.png", "fleche", "red", self.formesGeometriqueLigneDuBas),
+        ]
+
+        for image, forme, couleur, ligne in formes_config:
+            btn = QPushButton("")
+            btn.setIcon(QPixmap(image))
+            btn.setIconSize(QSize(100, 100))
+            btn.setFixedSize(130, 130)
+            btn.setStyleSheet(f"""
+                QPushButton {{ border-radius: 25px; }}
+                QPushButton:hover {{ background-color: {couleur}; }}
+            """)
+            btn.clicked.connect(lambda checked, f=forme: self.ouvrir_panneau_forme(f))
+            ligne.addWidget(btn)
+
+        self.layout_controles.addLayout(self.formesGeometriqueLigneDuHaut)
+        self.layout_controles.addSpacing(10)
+        self.layout_controles.addLayout(self.formesGeometriqueLigneDuBas)
+        self.layout_controles.addSpacing(10)
+
+        # --- Sliders simulation ---
+        self.texte_temperature, self.slider_temperature = self.creer_bloc("Temperature", 0, 30, "°C")
+        self.layout_controles.addSpacing(10)
+        self.texte_viscous, self.slider_viscous = self.creer_bloc("Viscous", 0, 1000)
+        self.layout_controles.addSpacing(10)
+        self.texte_pression, self.slider_pression = self.creer_bloc("Pression", 0, 301.4, "kPa", 10)
+        self.layout_controles.addSpacing(10)
+        self.texte_vitesse, self.slider_vitesse = self.creer_bloc("Vitesse", 0, 100, "m/s")
+        self.layout_controles.addStretch()
+
+        # --- Panneau édition forme ---
         self.scene2_container = QWidget()
         self.scene2_layout = QVBoxLayout(self.scene2_container)
-        self.bouton_confirmer = QPushButton("confirmer")
-        self.bouton_confirmer.clicked.connect(lambda: self.stack.setCurrentIndex(0))
+
+        self.label_forme_choisie = QLabel("Forme")
+        self.label_forme_choisie.setFont(self.police_scientifique)
+        self.scene2_layout.addWidget(self.label_forme_choisie)
+
+        self.layout_sliders_forme = QVBoxLayout()
+        self.scene2_layout.addLayout(self.layout_sliders_forme)
+        self.sliders_forme = {}
+
+        self.sliders_xyz = {}
+        for axe, max_val in zip(["x", "y", "z"], [self.grille.x, self.grille.y, self.grille.z]):
+            ligne = QHBoxLayout()
+            label_axe = QLabel(f"{axe}: 0.01")
+            label_axe.setFont(self.police_scientifique)
+            slider = QSlider(Qt.Horizontal)
+            slider.setRange(1, int(max_val * 100))
+            slider.setValue(100)
+            slider.valueChanged.connect(lambda v, l=label_axe, a=axe: l.setText(f"{a}: {v / 100:.2f}"))
+            ligne.addWidget(QLabel(axe))
+            ligne.addWidget(slider)
+            ligne.addWidget(label_axe)
+            self.scene2_layout.addLayout(ligne)
+            self.sliders_xyz[axe] = slider
+
+        self.bouton_confirmer = QPushButton("Confirmer")
+        self.bouton_confirmer.clicked.connect(self.confirmer_forme)
         self.scene2_layout.addWidget(self.bouton_confirmer)
+
+        self.bouton_annuler = QPushButton("Annuler")
+        self.bouton_annuler.clicked.connect(self.annuler_forme)
+        self.scene2_layout.addWidget(self.bouton_annuler)
+        self.scene2_layout.addStretch()
+
 
         self.stack.addWidget(self.panneau)
         self.stack.addWidget(self.scene2_container)
+        self.layout_principal.addWidget(self.stack, stretch=3)
 
-        def creer_bloc(nom, min_val, max_val, unite="", facteur=1):
-            self.bloc = QVBoxLayout()
-            self.texte = QLabel(nom)
-            self.texte.setFont(self.police_scientifique)
-            self.ligne = QHBoxLayout()
-            self.label_valeur = QLabel(str(min_val) + " " + unite)
-            self.label_valeur.setFont(self.police_scientifique)
-            self.ligne.addWidget(self.texte)
-            self.ligne.addStretch()
-            self.ligne.addWidget(self.label_valeur)
-            self.slider = QSlider(Qt.Horizontal)
-            self.slider.setRange(int(min_val * facteur), int(max_val * facteur))
-            self.slider.valueChanged.connect(
-                lambda v, l=self.label_valeur, u=unite, f=facteur:
-                self.update_value(l, v, u, f)
-            )
-            self.bloc.addLayout(self.ligne)
-            self.bloc.addWidget(self.texte)
-            self.bloc.addWidget(self.slider)
-            self.layout_controles.addLayout(self.bloc)
-            return self.texte, self.slider
-
-        self.boutons = QHBoxLayout()
-        self.boutons.setSpacing(10)
-
-        self.boutonRun = QPushButton("Clique moi!")
-        self.bouton_reset = QPushButton("Reset")
-
-        self.boutons.addWidget(self.boutonRun)
-        self.boutons.addWidget(self.bouton_reset)
-
-        self.boutonRun.clicked.connect(self.animerRun)
-        self.bouton_reset.clicked.connect(self.animerReset)
-
-        self.formesGeometriqueLigneDuHaut = QHBoxLayout()
-
-        self.image_sphere = QPixmap("realSphere.png")
-        self.bouton_sphere = QPushButton("")
-        self.bouton_sphere.setIcon(self.image_sphere)
-        self.bouton_sphere.setIconSize(QSize(100, 100))
-        self.bouton_sphere.setFixedSize(130, 130)
-        self.bouton_sphere.setStyleSheet("""
-            QPushButton { border-radius: 25px; border: 6x solid black; }
-            QPushButton:hover { background-color: black; }
-        """)
-
-        self.image_rectangle = QPixmap("rectangle.png")
-        self.bouton_rectangle = QPushButton("")
-        self.bouton_rectangle.setIcon(self.image_rectangle)
-        self.bouton_rectangle.setIconSize(QSize(100, 100))
-        self.bouton_rectangle.setFixedSize(130, 130)
-        self.bouton_rectangle.setStyleSheet("""
-            QPushButton { border-radius: 25px; border: 6x solid black; }
-            QPushButton:hover { background-color: yellow; }
-        """)
-
-        self.image_carre = QPixmap("cube.png")
-        self.bouton_cube = QPushButton("")
-        self.bouton_cube.setIcon(self.image_carre)
-        self.bouton_cube.setIconSize(QSize(100, 100))
-        self.bouton_cube.setFixedSize(130, 130)
-        self.bouton_cube.setStyleSheet("""
-             QPushButton { border-radius: 25px; border: 6x solid black; }
-            QPushButton:hover { background-color: blue; }
-        """)
-
-        self.formesGeometriqueLigneDuHaut.addWidget(self.bouton_sphere)
-        self.formesGeometriqueLigneDuHaut.addWidget(self.bouton_rectangle)
-        self.formesGeometriqueLigneDuHaut.addWidget(self.bouton_cube)
-
-        self.formesGeometriqueLigneDuBas = QHBoxLayout()
-
-        self.image_cylindre = QPixmap("cylindre.png")
-        self.bouton_cylindre = QPushButton("")
-        self.bouton_cylindre.setIcon(self.image_cylindre)
-        self.bouton_cylindre.setIconSize(QSize(100, 100))
-        self.bouton_cylindre.setFixedSize(130, 130)
-        self.bouton_cylindre.setStyleSheet("""
-            QPushButton { border-radius: 25px; border: 6x solid black; }
-            QPushButton:hover { background-color: orange; }
-        """)
-
-        self.image_pyramide = QPixmap("Pyramide.png")
-        self.bouton_pyramide = QPushButton("")
-        self.bouton_pyramide.setIcon(self.image_pyramide)
-        self.bouton_pyramide.setIconSize(QSize(100, 100))
-        self.bouton_pyramide.setFixedSize(130, 130)
-        self.bouton_pyramide.setStyleSheet("""
-            QPushButton { border-radius: 25px; border: 6x solid black; }
-            QPushButton:hover { background-color: red; }
-        """)
-
-        self.image_fleche = QPixmap("flèche3D.png")
-        self.bouton_parralelogramme = QPushButton("")
-        self.bouton_parralelogramme.setIcon(self.image_fleche)
-        self.bouton_parralelogramme.setIconSize(QSize(100, 100))
-        self.bouton_parralelogramme.setFixedSize(130, 130)
-        self.bouton_parralelogramme.setStyleSheet("""
-            QPushButton { border-radius: 25px; border: 6x solid black; }
-            QPushButton:hover { background-color: orange; }
-        """)
-
-        self.formesGeometriqueLigneDuBas.addWidget(self.bouton_cylindre)
-        self.formesGeometriqueLigneDuBas.addWidget(self.bouton_pyramide)
-        self.formesGeometriqueLigneDuBas.addWidget(self.bouton_parralelogramme)
-
-
-        self.bouton_sphere.clicked.connect(self.add_sphere)
-        self.bouton_sphere.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-        self.bouton_sphere.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-        self.bouton_cube.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-        self.bouton_rectangle.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-        self.bouton_cylindre.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-        self.bouton_pyramide.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-        self.bouton_parralelogramme.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-
-        self.layout_controles.addLayout(self.boutons)
-        self.layout_controles.addLayout(self.formesGeometriqueLigneDuHaut)
-        self.layout_controles.setSpacing(5)
-        self.layout_controles.addLayout(self.formesGeometriqueLigneDuBas)
-
-        self.texte_temperature, self.slider_temperature = creer_bloc("Temperature", 0, 30, "°C")
-        self.texte_viscous, self.slider_viscous = creer_bloc("Viscous", 0, 1000)
-        self.texte_pression, self.slider_pression = creer_bloc("Pression", 101.4, 301.4, "kPa", 10)
-        self.texte_vitesse, self.slider_vitesse = creer_bloc("Vitesse", 0, 100, "m/s")
-
-        self.layout_controles.addStretch()
-        self.layout_principal.addWidget(self.stack, stretch=1)
+        # --- Paramètres formes ---
+        self.parametres_formes = {
+            "sphere": [("rayon", 1, 3)],
+            "cube": [("c", 1, 3)],
+            "cylindre": [("rayon", 1, 3), ("h", 1, 3)],
+            "prisme": [("l", 1, 3), ("w", 1, 3), ("h", 1, 3)],
+            "pyramide": [("h", 1, 3)],
+            "fleche": [("l", 1, 3), ("w", 1, 3)],
+        }
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
 
+
+    # --- Génération sliders forme ---
+    def generer_sliders_forme(self, nom_forme):
+        self.sliders_forme.clear()
+
+        for param, min_val, max_val in self.parametres_formes.get(nom_forme, []):
+            container = QWidget()
+            layout = QHBoxLayout(container)
+
+            label = QLabel(f"{min_val:.2f}")
+            label.setFont(self.police_scientifique)
+
+            slider = QSlider(Qt.Horizontal)
+            slider.setRange(int(min_val * 100), int(max_val * 100))
+            slider.setValue(int(min_val * 100))
+
+            slider.valueChanged.connect(lambda v, l=label: l.setText(f"{v / 100:.2f}"))
+
+            layout.addWidget(QLabel(param))
+            layout.addWidget(slider)
+            layout.addWidget(label)
+
+            self.layout_sliders_forme.addWidget(container)
+            self.sliders_forme[param] = slider
+
+
+    # --- Créer un bloc slider ---
+    def creer_bloc(self, nom, min_val, max_val, unite="", facteur=1):
+        bloc = QVBoxLayout()
+        texte = QLabel(nom)
+        texte.setFont(self.police_scientifique)
+        ligne = QHBoxLayout()
+        label_valeur = QLabel(f"{min_val} {unite}")
+        label_valeur.setFont(self.police_scientifique)
+        ligne.addWidget(texte)
+        ligne.addStretch()
+        ligne.addWidget(label_valeur)
+        slider = QSlider(Qt.Horizontal)
+        slider.setRange(int(min_val * facteur), int(max_val * facteur))
+        slider.valueChanged.connect(
+            lambda v, l=label_valeur, u=unite, f=facteur: self.update_value(l, v, u, f)
+        )
+        bloc.addLayout(ligne)
+        bloc.addWidget(slider)
+        self.layout_controles.addLayout(bloc)
+        return texte, slider
+
+
+
+    def ouvrir_panneau_forme(self, nom_forme):
+        self.forme_selectionnee = nom_forme
+        self.label_forme_choisie.setText(nom_forme.capitalize())
+
+
+        for slider in self.sliders_xyz.values():
+            slider.setValue(100)
+
+        # Générer sliders forme
+        self.generer_sliders_forme(nom_forme)
+
+        # Créer une forme temporaire dans Scene3D
+        default_valeurs = {param: min_val for param, min_val, max_val in self.parametres_formes.get(nom_forme, [])}
+        self.forme_en_scene = f"{nom_forme}_{id(nom_forme)}"
+        self.scene.parametres_formes[self.forme_en_scene] = {
+            "type": nom_forme,
+            "params": default_valeurs.copy()
+        }
+
+        # Créer mesh initial
+        new_mesh = self.scene._creer_mesh(self.scene.parametres_formes[self.forme_en_scene])
+        actor = self.scene.plotter.add_mesh(new_mesh)
+        self.scene.acteurs_mesh[self.forme_en_scene] = actor
+        self.scene.acteur_current = self.forme_en_scene
+
+        # Sliders modifient les dimensions en direct
+        for slider in self.sliders_forme.values():
+            try:
+                slider.valueChanged.disconnect()
+            except TypeError:
+                pass
+            slider.valueChanged.connect(self.mettre_a_jour_dimensions)
+
+        self.stack.setCurrentIndex(1)
+
+
+    # --- Confirmer forme ---
+    def confirmer_forme(self):
+        self.stack.setCurrentIndex(0)
+
+
+    # --- Annuler forme ---
+    def annuler_forme(self):
+        if self.forme_en_scene:
+            self.scene.supprimer_forme(self.scene.acteurs_mesh[self.forme_en_scene])
+            del self.scene.parametres_formes[self.forme_en_scene]
+            del self.scene.acteurs_mesh[self.forme_en_scene]
+            self.forme_en_scene = None
+        self.stack.setCurrentIndex(0)
+
+
+    # --- Mettre à jour dimensions ---
+    def mettre_a_jour_dimensions(self):
+        if self.forme_en_scene is None:
+            return
+        valeurs = {nom: slider.value() / 100 for nom, slider in self.sliders_forme.items()}
+        self.scene.acteur_current = self.forme_en_scene
+        self.scene.changer_dimensions(valeurs)
+
+
+    # --- Slider valeur ---
     def update_value(self, label, value, unite, facteur):
         valeur_reelle = value / facteur
-        label.setText(f"{valeur_reelle} {unite}")
+        if facteur > 1:
+            label.setText(f"{valeur_reelle:.2f} {unite}")
+        else:
+            label.setText(f"{int(valeur_reelle)} {unite}")
 
+
+    # --- Simulation ---
     def update_simulation(self):
         self.grille.update_valeurs()
         self.scene.grille_3D.update_scene()
 
-    def add_sphere(self):
-        print("penis")
-
-    def add_prisme(self):
-        h = 1
-        l = 2
-        w = 3
-        self.scene.add_prisme(h, l, w)
 
     def animerRun(self):
         if not self.pause:
-            self.boutonRun.setStyleSheet("""
-                QPushButton { background-color: green; }
-            """)
+            self.boutonRun.setStyleSheet("QPushButton { background-color: green; }")
             self.boutonRun.setText("Play")
             self.timer.stop()
-        elif self.pause:
-            self.boutonRun.setStyleSheet("""
-                QPushButton { background-color: red; }
-            """)
+        else:
+            self.boutonRun.setStyleSheet("QPushButton { background-color: red; }")
             self.boutonRun.setText("Stop")
             self.timer.start(1000 // 30)
         self.pause = not self.pause
 
-    def add_cylindre(self):
-        rayon = 1
-        h = 1
-        self.scene.add_cylindre(rayon, h)
 
     def animerReset(self):
         self.timer.stop()
         self.pause = True
-
-        self.boutonRun.setText("Clique moi!")
-        self.boutonRun.setStyleSheet("""
-            QPushButton { background-color: lightgrey; }
-        """)
+        self.boutonRun.setText("Commencer la simulation")
+        self.boutonRun.setStyleSheet("QPushButton { background-color: white; }")
 
         self.scene.plotter.close()
         self.scene_layoutScene3D.removeWidget(self.scene.plotter)
@@ -235,13 +289,5 @@ class MainWindow(QMainWindow):
 
         self.slider_temperature.setValue(0)
         self.slider_viscous.setValue(0)
-        self.slider_pression.setValue(101.4)
+        self.slider_pression.setValue(0)
         self.slider_vitesse.setValue(0)
-
-    def add_cube(self):
-        c = 1
-        self.scene.add_cube(c)
-
-    def add_pyramide(self):
-        self.scene.add_pyramide()
-

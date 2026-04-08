@@ -48,6 +48,7 @@ class Scene3D(QObject):
         self.parametres_formes[acteur] = {"type": "sphere", "params": {"rayon": rayon}}
 
     def add_cube(self, c):
+        print("vrotato")
         acteur = self._enregistrer(pv.Cube(center=(0,0,0), x_length=c, y_length=c, z_length=c))
         self.parametres_formes[acteur] = {"type": "cube", "params": {"c": c}}
 
@@ -65,8 +66,9 @@ class Scene3D(QObject):
         self.parametres_formes[acteur] = {"type": "pyramide", "params": {"h": h}}
 
     def add_fleche(self, l, w):
-        acteur = self._enregistrer(pv.Arrow(center=(0, 0, 0), x_length=l, y_length=w))
+        acteur = self._enregistrer(pv.Arrow(tip_length=0.25, tip_radius=0.1, shaft_radius=0.03))
         self.parametres_formes[acteur] = {"type": "fleche", "params": {"l": l, "w": w}}
+
 
     def on_pick(self, acteur):
         # Définir l'acteur (la mesh) sélectionnée
@@ -134,7 +136,7 @@ class Scene3D(QObject):
         elif params["type"] == "fleche":
             l = params["params"]["l"]
             w = params["params"]["w"]
-            return pv.Arrow(center=(0,0,0), x_length=l, y_length=w)
+            return pv.Arrow(start=(0,0,0), tip_length=l, tip_radius=w, shaft_radius=w/2, direction=(0,0,1))
         return None
 
     def _creer_pyramide(self, h, pos):
