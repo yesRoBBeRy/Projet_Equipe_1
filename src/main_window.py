@@ -291,3 +291,4 @@ class MainWindow(QMainWindow):
         self.slider_viscous.setValue(0)
         self.slider_pression.setValue(0)
         self.slider_vitesse.setValue(0)
+        print()
