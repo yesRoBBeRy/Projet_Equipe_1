@@ -106,7 +106,6 @@ class Scene3D(QObject):
 
         centre_min = np.array(self.pos_max[self.acteur_current]["centre_min"])
         new_pos_plus = centre_min + np.array([x,y,z]) + np.array(self.pos_max[self.acteur_current]["bounds"])
-        new_pos_minus =centre_min + np.array([x,y,z]) - np.array(self.pos_max[self.acteur_current]["bounds"])
         if np.any((new_pos_plus > self.dimensions_grille) == True):
             print("yo")
             return
@@ -115,6 +114,9 @@ class Scene3D(QObject):
         mesh.points[:] = point_origine + (x, y, z)
         self.pos_current[self.acteur_current] = (x, y, z)
         self.plotter.render()
+
+    def changer_dimensions_dict(self, valeurs:dict):
+        self.changer_dimensions(**valeurs)
 
     def changer_dimensions(self, **kwargs):
         if self.acteur_current is None or self.plotter.picked_mesh is None:
@@ -193,3 +195,30 @@ class Scene3D(QObject):
 
     def position(self):
         pass
+
+    def ajouter_forme_temporaire(self, nom_forme, default_valeurs):
+        key = f"{nom_forme}_{id(nom_forme)}"
+        self.parametres_formes[key] = {
+            "type": nom_forme,
+            "params": default_valeurs.copy()
+        }
+        new_mesh = self._creer_mesh(self.parametres_formes[key])
+        acteur = self.plotter.add_mesh(new_mesh)
+        self.acteurs_mesh[key] = acteur
+        self.point_og[key] = new_mesh.points.copy()
+        self.pos_current[key] = (0, 0, 0)
+        self.acteur_current = key
+        self.plotter.render()
+        return key
+
+    def supprimer(self, acteur):
+        if acteur in self.acteurs_mesh:
+            self.plotter.remove_actor(acteur)
+            del self.acteurs_mesh[acteur]
+            del self.parametres_formes[acteur]
+            self.point_og.pop(acteur, None)
+            self.pos_current.pop(acteur, None)
+            self.pos_max.pop(acteur, None)
+            if self.acteur_current == acteur:
+                self.acteur_current = None
+            self.plotter.render()
