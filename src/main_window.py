@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
         self.layout_controles.addLayout(self.formesGeometriqueLigneDuBas)
         self.layout_controles.addSpacing(10)
 
-        # --- Sliders simulation ---
+
         self.texte_temperature, self.slider_temperature = self.creer_bloc("Temperature", 0, 30, "°C")
         self.layout_controles.addSpacing(10)
         self.texte_viscous, self.slider_viscous = self.creer_bloc("Viscous", 0, 1000)
@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
         self.texte_vitesse, self.slider_vitesse = self.creer_bloc("Vitesse", 0, 100, "m/s")
         self.layout_controles.addStretch()
 
-        # --- Panneau édition forme ---
+
         self.scene2_container = QWidget()
         self.scene2_layout = QVBoxLayout(self.scene2_container)
 
@@ -114,9 +114,9 @@ class MainWindow(QMainWindow):
         self.bouton_confirmer.clicked.connect(self.confirmer_forme)
         self.scene2_layout.addWidget(self.bouton_confirmer)
 
-        self.bouton_annuler = QPushButton("Annuler")
-        self.bouton_annuler.clicked.connect(self.annuler_forme)
-        self.scene2_layout.addWidget(self.bouton_annuler)
+        self.bouton_supprimer = QPushButton("Supprimer")
+        self.bouton_supprimer.clicked.connect(self.supprimer_forme)
+        self.scene2_layout.addWidget(self.bouton_supprimer)
         self.scene2_layout.addStretch()
 
 
@@ -124,7 +124,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.scene2_container)
         self.layout_principal.addWidget(self.stack, stretch=3)
 
-        # --- Paramètres formes ---
+
         self.parametres_formes = {
             "sphere": [("rayon", 1, 3)],
             "cube": [("c", 1, 3)],
@@ -138,7 +138,7 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.update_simulation)
 
 
-    # --- Génération sliders forme ---
+
     def generer_sliders_forme(self, nom_forme):
         self.sliders_forme.clear()
 
@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
             self.sliders_forme[param] = slider
 
 
-    # --- Créer un bloc slider ---
+
     def creer_bloc(self, nom, min_val, max_val, unite="", facteur=1):
         bloc = QVBoxLayout()
         texte = QLabel(nom)
@@ -199,17 +199,8 @@ class MainWindow(QMainWindow):
 
         # Créer une forme temporaire dans Scene3D
         default_valeurs = {param: min_val for param, min_val, max_val in self.parametres_formes.get(nom_forme, [])}
-        self.forme_en_scene = f"{nom_forme}_{id(nom_forme)}"
-        self.scene.parametres_formes[self.forme_en_scene] = {
-            "type": nom_forme,
-            "params": default_valeurs.copy()
-        }
+        self.forme_en_scene = self.scene.ajouter_forme_temporaire(nom_forme, default_valeurs)
 
-        # Créer mesh initial
-        new_mesh = self.scene._creer_mesh(self.scene.parametres_formes[self.forme_en_scene])
-        actor = self.scene.plotter.add_mesh(new_mesh)
-        self.scene.acteurs_mesh[self.forme_en_scene] = actor
-        self.scene.acteur_current = self.forme_en_scene
 
         # Sliders modifient les dimensions en direct
         for slider in self.sliders_forme.values():
@@ -222,31 +213,28 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(1)
 
 
-    # --- Confirmer forme ---
+
     def confirmer_forme(self):
         self.stack.setCurrentIndex(0)
 
 
-    # --- Annuler forme ---
-    def annuler_forme(self):
-        if self.forme_en_scene:
-            self.scene.supprimer_forme(self.scene.acteurs_mesh[self.forme_en_scene])
-            del self.scene.parametres_formes[self.forme_en_scene]
-            del self.scene.acteurs_mesh[self.forme_en_scene]
-            self.forme_en_scene = None
+
+    def supprimer_forme(self):
+        if self.forme_en_scene is not None:
+            self.scene.supprimer(self.scene.acteur_current)
         self.stack.setCurrentIndex(0)
 
 
-    # --- Mettre à jour dimensions ---
+
     def mettre_a_jour_dimensions(self):
         if self.forme_en_scene is None:
             return
         valeurs = {nom: slider.value() / 100 for nom, slider in self.sliders_forme.items()}
         self.scene.acteur_current = self.forme_en_scene
-        self.scene.changer_dimensions(valeurs)
+        self.scene.changer_dimensions_dict(valeurs)
 
 
-    # --- Slider valeur ---
+
     def update_value(self, label, value, unite, facteur):
         valeur_reelle = value / facteur
         if facteur > 1:
@@ -255,7 +243,7 @@ class MainWindow(QMainWindow):
             label.setText(f"{int(valeur_reelle)} {unite}")
 
 
-    # --- Simulation ---
+
     def update_simulation(self):
         self.grille.update_valeurs()
         self.scene.grille_3D.update_scene()
