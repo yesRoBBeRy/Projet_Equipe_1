@@ -52,6 +52,7 @@ class Scene3D(QObject):
         acteur = self._enregistrer(mesh)
         self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "sphere", "params": {"rayon": rayon}}
+        return acteur
 
     def add_cube(self, c):
         center_min = (c/2,c/2,c/2)
@@ -119,7 +120,7 @@ class Scene3D(QObject):
         self.changer_dimensions(**valeurs)
 
     def changer_dimensions(self, **kwargs):
-        if self.acteur_current is None or self.plotter.picked_mesh is None:
+        if self.acteur_current is None or self.plotter.acteur_current not in self.acteurs_mesh:
             self.acteur_current = None
             return
 
@@ -197,19 +198,15 @@ class Scene3D(QObject):
         pass
 
     def ajouter_forme_temporaire(self, nom_forme, default_valeurs):
-        key = f"{nom_forme}_{id(nom_forme)}"
-        self.parametres_formes[key] = {
-            "type": nom_forme,
-            "params": default_valeurs.copy()
-        }
-        new_mesh = self._creer_mesh(self.parametres_formes[key])
+        new_mesh = self._creer_mesh({"type": nom_forme, "params": default_valeurs.copy()})
         acteur = self.plotter.add_mesh(new_mesh)
-        self.acteurs_mesh[key] = acteur
-        self.point_og[key] = new_mesh.points.copy()
-        self.pos_current[key] = (0, 0, 0)
-        self.acteur_current = key
+        self.acteurs_mesh[acteur] = new_mesh
+        self.parametres_formes[acteur] = {"type": nom_forme, "params": default_valeurs.copy()}
+        self.point_og[acteur] = new_mesh.points.copy()
+        self.pos_current[acteur] = (0, 0, 0)
+        self.acteur_current = acteur
         self.plotter.render()
-        return key
+        return acteur
 
     def supprimer(self, acteur):
         if acteur in self.acteurs_mesh:
