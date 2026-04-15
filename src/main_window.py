@@ -140,6 +140,11 @@ class MainWindow(QMainWindow):
 
 
     def generer_sliders_forme(self, nom_forme):
+        while self.layout_sliders_forme.count():
+            item = self.layout_sliders_forme.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
         self.sliders_forme.clear()
 
         for param, min_val, max_val in self.parametres_formes.get(nom_forme, []):
@@ -199,7 +204,7 @@ class MainWindow(QMainWindow):
 
         # Créer une forme temporaire dans Scene3D
         default_valeurs = {param: min_val for param, min_val, max_val in self.parametres_formes.get(nom_forme, [])}
-        self.forme_en_scene = self.scene.ajouter_forme_temporaire(nom_forme, default_valeurs)
+        self.forme_en_scene = self.scene.add_forme(nom_forme, default_valeurs)
 
 
         # Sliders modifient les dimensions en direct

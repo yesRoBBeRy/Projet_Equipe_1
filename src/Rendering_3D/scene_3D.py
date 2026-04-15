@@ -77,7 +77,7 @@ class Scene3D(QObject):
         self.parametres_formes[acteur] = {"type": "pyramide", "params": {"h": h}}
 
     def add_fleche(self, l, w):
-        mesh = pv.Arrow(center=(0, 0, 0), x_length=l, y_length=w)
+        mesh = pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w/2)
         acteur = self._enregistrer(mesh)
         self.parametres_formes[acteur] = {"type": "fleche", "params": {"l": l, "w": w}}
 
@@ -119,7 +119,7 @@ class Scene3D(QObject):
         self.changer_dimensions(**valeurs)
 
     def changer_dimensions(self, **kwargs):
-        if self.acteur_current is None or self.plotter.picked_mesh is None:
+        if self.acteur_current is None:
             self.acteur_current = None
             return
 
@@ -157,7 +157,7 @@ class Scene3D(QObject):
         elif params["type"] == "fleche":
             l = params["params"]["l"]
             w = params["params"]["w"]
-            return pv.Arrow(center=(0, 0, 0), x_length=l, y_length=w)
+            return pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w/2)
         return None
 
     def _creer_pyramide(self, h, pos):
@@ -193,24 +193,6 @@ class Scene3D(QObject):
         self.pos_max[acteur] = {"bounds": [x, y, z], "centre_min": mesh.center}
         print(self.pos_max[acteur])
 
-    def position(self):
-        pass
-
-    def ajouter_forme_temporaire(self, nom_forme, default_valeurs):
-        key = f"{nom_forme}_{id(nom_forme)}"
-        self.parametres_formes[key] = {
-            "type": nom_forme,
-            "params": default_valeurs.copy()
-        }
-        new_mesh = self._creer_mesh(self.parametres_formes[key])
-        acteur = self.plotter.add_mesh(new_mesh)
-        self.acteurs_mesh[key] = acteur
-        self.point_og[key] = new_mesh.points.copy()
-        self.pos_current[key] = (0, 0, 0)
-        self.acteur_current = key
-        self.plotter.render()
-        return key
-
     def supprimer(self, acteur):
         if acteur in self.acteurs_mesh:
             self.plotter.remove_actor(acteur)
@@ -222,3 +204,16 @@ class Scene3D(QObject):
             if self.acteur_current == acteur:
                 self.acteur_current = None
             self.plotter.render()
+
+    def add_forme(self, nom_forme, valeurs):
+        d = {
+            "sphere" : lambda val: self.add_sphere(val["rayon"]),
+            "prisme" : lambda val: self.add_prisme(val["h"], val["l"], val["w"]),
+            "cube" : lambda val: self.add_cube(val["c"]),
+            "cylindre" : lambda val: self.add_cylindre(val["rayon"], val["h"]),
+            "pyramide": lambda val: self.add_pyramide(val["h"]),
+            "fleche" : lambda val: self.add_fleche(val["l"], val["w"])
+        }
+        d[nom_forme](valeurs)
+        self.acteur_current = list(self.acteurs_mesh)[-1]
+        return self.acteur_current
