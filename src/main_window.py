@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
             slider = QSlider(Qt.Horizontal)
             slider.setRange(1, int(max_val * 100))
             slider.setValue(100)
-            slider.valueChanged.connect(lambda v, l=label_axe, a=axe: l.setText(f"{a}: {v / 100:.2f}"))
+            slider.valueChanged.connect(lambda v, l=label_axe, a=axe: self.update_slider_position(v, l, a))
             ligne.addWidget(QLabel(axe))
             ligne.addWidget(slider)
             ligne.addWidget(label_axe)
@@ -137,6 +137,16 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
 
+    def update_slider_position(self, v, l, a,):
+        l.setText(f"{a}: {v / 100:.2f}")
+        pos = v/100
+        x, y, z = self.scene.pos_current[self.forme_en_scene]
+        if a == "x":
+            self.scene.deplacement(pos,y, z)
+        elif a == "y":
+            self.scene.deplacement(x, pos, z)
+        elif a == "z":
+            self.scene.deplacement(x, y, pos)
 
 
     def generer_sliders_forme(self, nom_forme):
@@ -205,6 +215,7 @@ class MainWindow(QMainWindow):
         # Créer une forme temporaire dans Scene3D
         default_valeurs = {param: min_val for param, min_val, max_val in self.parametres_formes.get(nom_forme, [])}
         self.forme_en_scene = self.scene.add_forme(nom_forme, default_valeurs)
+        self.scene.acteur_current = self.forme_en_scene
 
 
         # Sliders modifient les dimensions en direct

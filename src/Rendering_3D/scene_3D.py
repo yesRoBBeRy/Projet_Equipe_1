@@ -65,7 +65,7 @@ class Scene3D(QObject):
         mesh = pv.Cylinder(center=center_min, radius=rayon, height=l)
         acteur = self._enregistrer(mesh)
         self.get_bounds(mesh, acteur)
-        self.parametres_formes[acteur] = {"type": "cylindre", "params": {"rayon" : rayon, "l": l}}
+        self.parametres_formes[acteur] = {"type": "cylindre", "params": {"rayon" : rayon, "h": l}}
 
     def add_prisme(self, h, l, w):
         acteur = self._enregistrer(pv.Cube(center=(0, 0, 0), x_length=h, y_length=l, z_length=w))
@@ -74,6 +74,7 @@ class Scene3D(QObject):
     def add_pyramide(self, h):
         new_mesh = self._creer_pyramide(h, (0, 0, 0))
         acteur = self._enregistrer(new_mesh)
+        self.get_bounds(new_mesh, acteur)
         self.parametres_formes[acteur] = {"type": "pyramide", "params": {"h": h}}
 
     def add_fleche(self, l, w):
@@ -99,7 +100,7 @@ class Scene3D(QObject):
         return acteur
 
     def deplacement(self, x, y, z):
-        if self.acteur_current is None or self.plotter.picked_mesh is None:
+        if self.acteur_current is None:
             self.acteur_current = None
             return
         mesh = self.acteurs_mesh[self.acteur_current]
@@ -129,6 +130,7 @@ class Scene3D(QObject):
 
         new_mesh = self._creer_mesh(params)
         self.acteurs_mesh[acteur].copy_from(new_mesh)
+        self.get_bounds(self.acteurs_mesh[acteur], acteur)
         self.point_og[acteur] = self.acteurs_mesh[acteur].points.copy()
         position = self.pos_current[acteur]
         self.deplacement(position[0], position[1], position[2])
@@ -144,7 +146,7 @@ class Scene3D(QObject):
             return new_mesh
         elif params["type"] == "cylindre":
             rayon = params["params"]["rayon"]
-            l = params["params"]["l"]
+            l = params["params"]["h"]
             return pv.Cylinder(center=(0, 0, 0), radius=rayon, height=l)
         elif params["type"] == "prisme":
             l = params["params"]["l"]
