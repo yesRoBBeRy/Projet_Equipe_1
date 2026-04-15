@@ -26,6 +26,8 @@ class MainWindow(QMainWindow):
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
         self.layout_principal.addWidget(self.scene_containerScene, stretch=3)
 
+        self.scene.forme.connect(self.recevoir_forme)
+
         # --- Stack pour panneau / édition ---
         self.stack = QStackedWidget()
         self.forme_en_scene = None
@@ -138,6 +140,8 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.update_simulation)
 
     def update_slider_position(self, v, l, a,):
+        if self.forme_en_scene not in self.scene.pos_current:
+            return
         l.setText(f"{a}: {v / 100:.2f}")
         pos = v/100
         x, y, z = self.scene.pos_current[self.forme_en_scene]
@@ -296,3 +300,31 @@ class MainWindow(QMainWindow):
         self.slider_pression.setValue(0)
         self.slider_vitesse.setValue(0)
         print()
+
+    def recevoir_forme(self, acteur):
+        if acteur is None:
+            return
+
+        self.forme_en_scene = acteur
+        self.scene.acteur_current = acteur
+
+        params = self.scene.parametres_formes.get(acteur)
+        if params is None:
+            return
+
+        nom_forme = params["type"]
+        self.label_forme_choisie.setText(nom_forme.capitalize())
+
+        self.generer_sliders_forme(nom_forme)
+
+        for nom, slider in self.sliders_forme.items():
+            valeur = params["params"].get(nom, 1)
+            slider.setValue(int(valeur * 100))
+
+        if acteur in self.scene.pos_current:
+            x, y, z = self.scene.pos_current[acteur]
+            self.sliders_xyz["x"].setValue(int(x * 100))
+            self.sliders_xyz["y"].setValue(int(y * 100))
+            self.sliders_xyz["z"].setValue(int(z * 100))
+
+        self.stack.setCurrentIndex(1)

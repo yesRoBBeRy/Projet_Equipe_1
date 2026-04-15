@@ -132,6 +132,10 @@ class Scene3D(QObject):
         self.acteurs_mesh[acteur].copy_from(new_mesh)
         self.get_bounds(self.acteurs_mesh[acteur], acteur)
         self.point_og[acteur] = self.acteurs_mesh[acteur].points.copy()
+
+        if acteur not in self.pos_current:
+            self.pos_current[acteur] = (0, 0, 0)
+
         position = self.pos_current[acteur]
         self.deplacement(position[0], position[1], position[2])
 
