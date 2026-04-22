@@ -8,22 +8,24 @@ from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QFont, QPixmap
 
 
-BG       = "#050d1a"
-SURFACE  = "#091525"
-PANEL    = "#071020"
-BORDER   = "#0e2a45"
-BORDER2  = "#1a4060"
-CYAN     = "#00d4ff"
-CYAN_DIM = "#007a99"
-ORANGE   = "#ff6b1a"
-GREEN    = "#00ff88"
-RED      = "#ff3333"
-TEXT     = "#c8e8ff"
-TEXT2    = "#4a7a9b"
-TEXT3    = "#1a3a55"
-MONO     = '"Consolas","Courier New",monospace'
+# ── Palette de couleurs de l'interface ──────────────────────────────────────
+BG       = "#050d1a"   # Fond principal (bleu très sombre)
+SURFACE  = "#091525"   # Surface des éléments
+PANEL    = "#071020"   # Fond du panneau latéral
+BORDER   = "#0e2a45"   # Bordure subtile
+BORDER2  = "#1a4060"   # Bordure accentuée
+CYAN     = "#00d4ff"   # Couleur d'accent principale
+CYAN_DIM = "#007a99"   # Cyan atténué (titres de section)
+ORANGE   = "#ff6b1a"   # Couleur du bouton reset
+GREEN    = "#00ff88"   # Couleur du bouton lancer
+RED      = "#ff3333"   # Couleur d'alerte / arrêt
+TEXT     = "#c8e8ff"   # Texte principal
+TEXT2    = "#4a7a9b"   # Texte secondaire (labels)
+TEXT3    = "#1a3a55"   # Texte tertiaire (peu utilisé)
+MONO     = '"Consolas","Courier New",monospace'  # Police monospace
 
 
+# ── Feuille de style globale de l'application ────────────────────────────────
 APP_STYLE = f"""
 QMainWindow, QWidget {{
     background-color: {BG};
@@ -81,7 +83,10 @@ QPushButton:pressed {{
     color: {CYAN};
 }}
 """
+
+
 class HLine(QFrame):
+    """Séparateur horizontal fin utilisé entre les sections du panneau."""
     def __init__(self):
         super().__init__()
         self.setFrameShape(QFrame.HLine)
@@ -90,6 +95,7 @@ class HLine(QFrame):
 
 
 class SectionTitle(QLabel):
+    """Label stylisé servant de titre de section (ex: 'OBSTACLES', 'PARAMÈTRES FLUIDE')."""
     def __init__(self, text):
         super().__init__(text)
         self.setStyleSheet(f"""
@@ -101,26 +107,39 @@ class SectionTitle(QLabel):
         """)
 
 
-
 class MainWindow(QMainWindow):
+    """
+    Fenêtre principale de la simulation de dynamique des fluides.
+
+    Contient :
+    - Un viewport 3D (Scene3D / PyVista) à gauche
+    - Un panneau de contrôle à droite géré par un QStackedWidget :
+        * Page 0 : contrôles généraux (run/reset, choix d'obstacle, paramètres fluide)
+        * Page 1 : configuration d'une forme sélectionnée (dimensions + position XYZ)
+    """
+
     def __init__(self):
         super().__init__()
 
-        self.pause = True
-        self.forme_selectionnee = None
-        self.grille = Grille(5, 5, 10)
+        # ── État interne ──────────────────────────────────────────────────────
+        self.pause = True                   # True = simulation arrêtée
+        self.forme_selectionnee = None      # Nom de la forme en cours de configuration
+        self.grille = Grille(5, 5, 10)      # Grille de simulation (5x5x10 cellules)
         self.police_scientifique = QFont("Consolas", 13)
+
+        # ── Fenêtre ───────────────────────────────────────────────────────────
         self.resize(1280, 720)
-        self.setWindowTitle("FLUID DYNAMICS SIMULATOR")
+        self.setWindowTitle("DYNAMIQUE DES FLUIDES SIM")
         self.setStyleSheet(APP_STYLE)
 
+        # ── Widget central et layout principal (horizontal) ───────────────────
         self.centre = QWidget()
         self.setCentralWidget(self.centre)
         self.layout_principal = QHBoxLayout(self.centre)
         self.layout_principal.setContentsMargins(0, 0, 0, 0)
         self.layout_principal.setSpacing(0)
 
-
+        # ── Zone viewport 3D (côté gauche) ───────────────────────────────────
         self.scene_containerScene = QWidget()
         self.scene_containerScene.setStyleSheet(f"background:{BG};")
         self.scene_layoutScene3D = QVBoxLayout(self.scene_containerScene)
@@ -129,18 +148,20 @@ class MainWindow(QMainWindow):
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
         self.layout_principal.addWidget(self.scene_containerScene)
 
-
+        # ── Pile de panneaux latéraux (côté droit) ───────────────────────────
         self.stack = QStackedWidget()
-        self.forme_en_scene = None
+        self.forme_en_scene = None  # Référence à l'acteur temporaire affiché
 
-
+        # ════════════════════════════════════════════════════════════════════
+        # PAGE 0 — Panneau de contrôle principal
+        # ════════════════════════════════════════════════════════════════════
         self.panneau = QWidget()
         self.panneau.setStyleSheet(f"background:{PANEL}; border-left: 1px solid {BORDER};")
         self.layout_controles = QVBoxLayout(self.panneau)
         self.layout_controles.setContentsMargins(18, 16, 18, 16)
         self.layout_controles.setSpacing(25)
 
-
+        # ── En-tête : titre + indicateur de statut ────────────────────────
         ligne_principale = QHBoxLayout()
         title_lbl = QLabel("FLUID SIM")
         title_lbl.setStyleSheet(f"""
@@ -162,7 +183,7 @@ class MainWindow(QMainWindow):
         self.layout_controles.addWidget(HLine())
         self.layout_controles.addSpacing(4)
 
-
+        # ── Boutons RUN / RESET ───────────────────────────────────────────
         self.boutons = QHBoxLayout()
         self.boutons.setSpacing(8)
 
@@ -202,7 +223,7 @@ class MainWindow(QMainWindow):
         self.layout_controles.addSpacing(8)
         self.layout_controles.addWidget(HLine())
 
-
+        # ── Grille de sélection des obstacles géométriques ────────────────
         self.layout_controles.addWidget(SectionTitle("OBSTACLES"))
 
         self.formesGeometriqueLigneDuHaut = QHBoxLayout()
@@ -210,6 +231,7 @@ class MainWindow(QMainWindow):
         self.formesGeometriqueLigneDuBas  = QHBoxLayout()
         self.formesGeometriqueLigneDuBas.setSpacing(6)
 
+        # (image, identifiant_forme, couleur_unused, ligne_cible)
         formes_config = [
             ("realSphere.png", "sphere",   "red", self.formesGeometriqueLigneDuHaut),
             ("prisme.png",     "prisme",   "red", self.formesGeometriqueLigneDuHaut),
@@ -219,6 +241,7 @@ class MainWindow(QMainWindow):
             ("fleche.png",     "fleche",   "red", self.formesGeometriqueLigneDuBas),
         ]
 
+        # Création dynamique d'un bouton icône pour chaque forme
         for image, forme, couleur, ligne in formes_config:
             btn = QPushButton("")
             btn.setIcon(QPixmap(image))
@@ -240,6 +263,7 @@ class MainWindow(QMainWindow):
                     border: 2px solid {CYAN};
                 }}
             """)
+            # Capture de `forme` par défaut pour éviter la closure tardive
             btn.clicked.connect(lambda checked, f=forme: self.ouvrir_panneau_forme(f))
             ligne.addWidget(btn)
 
@@ -249,32 +273,36 @@ class MainWindow(QMainWindow):
         self.layout_controles.addSpacing(4)
         self.layout_controles.addWidget(HLine())
 
-
+        # ── Sliders des paramètres physiques du fluide ────────────────────
         self.layout_controles.addWidget(SectionTitle("PARAMÈTRES FLUIDE"))
 
         self.texte_temperature, self.slider_temperature = self.creer_bloc("Température", 0, 30,    "°C")
         self.layout_controles.addSpacing(6)
         self.texte_viscous,     self.slider_viscous     = self.creer_bloc("Viscosité",   0, 1000,  "mPa")
         self.layout_controles.addSpacing(6)
+        # facteur=10 pour obtenir une résolution décimale (ex: 101.4 kPa)
         self.texte_pression,    self.slider_pression    = self.creer_bloc("Pression",    0, 301.4, "kPa", 10)
         self.layout_controles.addSpacing(6)
         self.texte_vitesse,     self.slider_vitesse     = self.creer_bloc("Vitesse",     0, 100,   "m/s")
         self.layout_controles.addStretch()
 
-
+        # ════════════════════════════════════════════════════════════════════
+        # PAGE 1 — Panneau de configuration d'une forme
+        # ════════════════════════════════════════════════════════════════════
         self.scene2_container = QWidget()
         self.scene2_container.setStyleSheet(f"background:{PANEL}; border-left: 1px solid {BORDER};")
         self.scene2_layout = QVBoxLayout(self.scene2_container)
         self.scene2_layout.setContentsMargins(18, 16, 18, 16)
         self.scene2_layout.setSpacing(50)
 
-
+        # ── Bouton retour vers la page principale ─────────────────────────
         btn_back = QPushButton("← RETOUR")
         btn_back.setFixedHeight(38)
         btn_back.clicked.connect(self.confirmer_forme)
         self.scene2_layout.addWidget(btn_back)
         self.scene2_layout.addWidget(HLine())
 
+        # ── Nom de la forme sélectionnée ──────────────────────────────────
         self.label_forme_choisie = QLabel("FORME")
         self.label_forme_choisie.setFont(self.police_scientifique)
         self.label_forme_choisie.setStyleSheet(f"""
@@ -286,46 +314,48 @@ class MainWindow(QMainWindow):
         """)
         self.scene2_layout.addWidget(self.label_forme_choisie)
 
-
+        # ── Zone de sliders spécifiques à la forme (générée dynamiquement) ─
         self.layout_sliders_forme = QVBoxLayout()
         self.layout_sliders_forme.setSpacing(8)
         self.scene2_layout.addLayout(self.layout_sliders_forme)
-        self.sliders_forme = {}
+        self.sliders_forme = {}  # { nom_param: QSlider }
 
+        # ── Sliders de position XYZ ───────────────────────────────────────
         self.scene2_layout.addWidget(HLine())
         self.scene2_layout.addWidget(SectionTitle("POSITION"))
 
-
-        self.sliders_xyz = {}
+        self.sliders_xyz = {}  # { 'x'|'y'|'z': QSlider }
         for axe, max_val in zip(["X", "Y", "Z"], [self.grille.x, self.grille.y, self.grille.z]):
-            row = QHBoxLayout()
-            row.setSpacing(10)
+            ligne = QHBoxLayout()
+            ligne.setSpacing(10)
 
             axe_lbl = QLabel(axe)
             axe_lbl.setFixedWidth(16)
             axe_lbl.setStyleSheet(f"color:{CYAN}; font-size:25px; font-weight:bold;")
 
+            # Valeur stockée en centièmes pour simuler un float (0.00 → max_val)
             slider = QSlider(Qt.Horizontal)
-            slider.setRange(1, int(max_val * 100))
-            slider.setValue(100)
+            slider.setRange(0, int(max_val * 100))
+            slider.setValue(0)
 
-            label_axe = QLabel("0.01")
+            label_axe = QLabel("0.00")
             label_axe.setFixedWidth(42)
             label_axe.setFont(self.police_scientifique)
             label_axe.setStyleSheet(f"color:{TEXT}; font-size:13px;")
 
+            # Affiche la valeur décimale réelle (v / 100)
             slider.valueChanged.connect(lambda v, l=label_axe, a=axe.lower(): l.setText(f"{v/100:.2f}"))
 
-            row.addWidget(axe_lbl)
-            row.addWidget(slider)
-            row.addWidget(label_axe)
-            self.scene2_layout.addLayout(row)
+            ligne.addWidget(axe_lbl)
+            ligne.addWidget(slider)
+            ligne.addWidget(label_axe)
+            self.scene2_layout.addLayout(ligne)
             self.sliders_xyz[axe.lower()] = slider
 
         self.scene2_layout.addWidget(HLine())
         self.scene2_layout.addSpacing(6)
 
-
+        # ── Bouton CONFIRMER ──────────────────────────────────────────────
         self.bouton_confirmer = QPushButton("✔  CONFIRMER")
         self.bouton_confirmer.setFixedHeight(44)
         self.bouton_confirmer.setStyleSheet(f"""
@@ -343,6 +373,7 @@ class MainWindow(QMainWindow):
         self.bouton_confirmer.clicked.connect(self.confirmer_forme)
         self.scene2_layout.addWidget(self.bouton_confirmer)
 
+        # ── Bouton SUPPRIMER ──────────────────────────────────────────────
         self.bouton_supprimer = QPushButton("✕  SUPPRIMER")
         self.bouton_supprimer.setFixedHeight(44)
         self.bouton_supprimer.setStyleSheet(f"""
@@ -361,12 +392,13 @@ class MainWindow(QMainWindow):
         self.scene2_layout.addWidget(self.bouton_supprimer)
         self.scene2_layout.addStretch()
 
-
-        self.stack.addWidget(self.panneau)
-        self.stack.addWidget(self.scene2_container)
+        # ── Ajout des deux pages dans la pile et insertion dans le layout ─
+        self.stack.addWidget(self.panneau)          # index 0
+        self.stack.addWidget(self.scene2_container) # index 1
         self.layout_principal.addWidget(self.stack)
 
-
+        # ── Définition des paramètres ajustables par forme ────────────────
+        # Format : { nom_forme: [(nom_param, min, max), ...] }
         self.parametres_formes = {
             "sphere":   [("rayon", 1, 3)],
             "cube":     [("c", 1, 3)],
@@ -376,13 +408,22 @@ class MainWindow(QMainWindow):
             "fleche":   [("l", 1, 3), ("w", 1, 3)],
         }
 
+        # ── Timer de la boucle de simulation (cible ~30 fps) ─────────────
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
 
-
+    # ════════════════════════════════════════════════════════════════════════
+    # Méthodes de l'interface
+    # ════════════════════════════════════════════════════════════════════════
 
     def generer_sliders_forme(self, nom_forme):
+        """
+        (Re)génère les sliders de paramètres dimensionnels pour la forme donnée.
+        Vide d'abord l'ancienne liste, puis crée un bloc par paramètre défini
+        dans self.parametres_formes.
+        """
         self.sliders_forme.clear()
+        # Suppression des anciens widgets du layout
         while self.layout_sliders_forme.count():
             item = self.layout_sliders_forme.takeAt(0)
             if item.widget():
@@ -397,6 +438,7 @@ class MainWindow(QMainWindow):
             param_lbl.setFixedWidth(52)
             param_lbl.setStyleSheet(f"color:{TEXT2}; font-size:12px; letter-spacing:1px;")
 
+            # Valeur en centièmes pour la précision décimale
             slider = QSlider(Qt.Horizontal)
             slider.setRange(int(min_val * 100), int(max_val * 100))
             slider.setValue(int(min_val * 100))
@@ -416,6 +458,17 @@ class MainWindow(QMainWindow):
             self.sliders_forme[param] = slider
 
     def creer_bloc(self, nom, min_val, max_val, unite="", facteur=1):
+        """
+        Crée un bloc label + slider pour un paramètre physique du fluide,
+        l'ajoute au panneau principal et retourne (QLabel_nom, QSlider).
+
+        Args:
+            nom      : Nom du paramètre (affiché en majuscules).
+            min_val  : Valeur minimale réelle du paramètre.
+            max_val  : Valeur maximale réelle du paramètre.
+            unite    : Unité affichée à côté de la valeur (ex: '°C').
+            facteur  : Multiplicateur interne du slider (utile pour les décimales).
+        """
         bloc = QVBoxLayout()
         bloc.setSpacing(6)
 
@@ -440,17 +493,27 @@ class MainWindow(QMainWindow):
         return texte, slider
 
     def ouvrir_panneau_forme(self, nom_forme):
+        """
+        Bascule vers la page 1 (configuration de forme) :
+        - Met à jour le titre et réinitialise les sliders XYZ.
+        - Génère les sliders propres à la forme sélectionnée.
+        - Crée une forme temporaire dans la scène 3D.
+        - Connecte chaque slider de dimension à mettre_a_jour_dimensions.
+        """
         self.forme_selectionnee = nom_forme
         self.label_forme_choisie.setText(nom_forme.upper())
 
+        # Réinitialisation de la position à l'origine
         for slider in self.sliders_xyz.values():
-            slider.setValue(100)
+            slider.setValue(0)
 
         self.generer_sliders_forme(nom_forme)
 
+        # Valeurs par défaut = minima de chaque paramètre
         default_valeurs = {param: min_val for param, min_val, max_val in self.parametres_formes.get(nom_forme, [])}
         self.forme_en_scene = self.scene.ajouter_forme_temporaire(nom_forme, default_valeurs)
 
+        # Reconnexion propre des sliders (évite les doublons de signaux)
         for slider in self.sliders_forme.values():
             try:
                 slider.valueChanged.disconnect()
@@ -461,9 +524,13 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(1)
 
     def confirmer_forme(self):
+        """Revient à la page principale (index 0) sans supprimer la forme."""
         self.stack.setCurrentIndex(0)
 
     def supprimer_forme(self):
+        """
+        Supprime l'acteur 3D temporaire de la scène et revient au panneau principal.
+        """
         print("in")
         if self.forme_en_scene is not None:
             print("out")
@@ -471,6 +538,10 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(0)
 
     def mettre_a_jour_dimensions(self):
+        """
+        Appelée à chaque changement d'un slider de dimension de forme.
+        Lit toutes les valeurs courantes et les transmet à la scène 3D.
+        """
         if self.forme_en_scene is None:
             return
         valeurs = {nom: slider.value() / 100 for nom, slider in self.sliders_forme.items()}
@@ -478,6 +549,10 @@ class MainWindow(QMainWindow):
         self.scene.changer_dimensions_dict(valeurs)
 
     def update_value(self, label, value, unite, facteur):
+        """
+        Met à jour le label d'affichage d'un paramètre fluide.
+        Affiche un flottant si facteur > 1, sinon un entier.
+        """
         valeur_reelle = value / facteur
         if facteur > 1:
             label.setText(f"{valeur_reelle:.2f} {unite}")
@@ -485,11 +560,21 @@ class MainWindow(QMainWindow):
             label.setText(f"{int(valeur_reelle)} {unite}")
 
     def update_simulation(self):
+        """
+        Slot appelé à chaque tick du timer (~30 fps).
+        Avance la simulation d'un pas et rafraîchit la scène 3D.
+        """
         self.grille.update_valeurs()
         self.scene.grille_3D.update_scene()
 
     def animerRun(self):
+        """
+        Bascule entre l'état RUNNING et IDLE :
+        - IDLE → RUNNING : démarre le timer, met à jour le bouton en rouge.
+        - RUNNING → IDLE : arrête le timer, remet le bouton en vert.
+        """
         if not self.pause:
+            # ── Passage à IDLE ────────────────────────────────────────────
             self.boutonRun.setText("▶  LANCER")
             self.boutonRun.setStyleSheet(f"""
                 QPushButton {{
@@ -505,6 +590,7 @@ class MainWindow(QMainWindow):
             self.status_dot.setStyleSheet(f"color:{TEXT2}; font-size:11px; letter-spacing:2px;")
             self.timer.stop()
         else:
+            # ── Passage à RUNNING ─────────────────────────────────────────
             self.boutonRun.setText("■  ARRÊTER")
             self.boutonRun.setStyleSheet(f"""
                 QPushButton {{
@@ -518,10 +604,16 @@ class MainWindow(QMainWindow):
             """)
             self.status_dot.setText("◉ RUN")
             self.status_dot.setStyleSheet(f"color:{GREEN}; font-size:11px; letter-spacing:2px;")
-            self.timer.start(1000 // 30)
+            self.timer.start(1000 // 30)  # ~30 fps
         self.pause = not self.pause
 
     def animerReset(self):
+        """
+        Réinitialise complètement la simulation :
+        - Arrête le timer et passe en état IDLE.
+        - Détruit et recrée la scène 3D et la grille.
+        - Remet tous les sliders de paramètres fluide à zéro.
+        """
         self.timer.stop()
         self.pause = True
         self.boutonRun.setText("▶  LANCER")
@@ -538,6 +630,7 @@ class MainWindow(QMainWindow):
         self.status_dot.setText("◉ IDLE")
         self.status_dot.setStyleSheet(f"color:{TEXT2}; font-size:11px; letter-spacing:2px;")
 
+        # ── Remplacement de la scène PyVista ──────────────────────────────
         self.scene.plotter.close()
         self.scene_layoutScene3D.removeWidget(self.scene.plotter)
         self.scene.plotter.deleteLater()
@@ -546,6 +639,7 @@ class MainWindow(QMainWindow):
         self.scene = Scene3D(self.scene_containerScene, self.grille)
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
 
+        # ── Remise à zéro des paramètres fluide ───────────────────────────
         self.slider_temperature.setValue(0)
         self.slider_viscous.setValue(0)
         self.slider_pression.setValue(0)
