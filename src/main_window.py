@@ -1,15 +1,5 @@
 from src.Rendering_3D.scene_3D import Scene3D
 from src.grille import Grille
-from PySide6.QtWidgets import QMainWindow, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStackedWidget
-from PySide6.QtCore import Qt, QTimer, QSize
-from PySide6.QtGui import QFont, QPixmap
-
-
-# ╔══════════════════════════════════════════════════════════════╗
-# ║  Remplace UNIQUEMENT ta classe MainWindow par ce fichier.   ║
-# ║  Garde tout le reste de ton code intact.                    ║
-# ╚══════════════════════════════════════════════════════════════╝
-
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel,
     QSlider, QPushButton, QStackedWidget, QSizePolicy, QFrame
@@ -17,9 +7,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QFont, QPixmap
 
-# ──────────────────────────────────────────────────────────────
-# PALETTE AÉROSPATIALE
-# ──────────────────────────────────────────────────────────────
+
 BG       = "#050d1a"
 SURFACE  = "#091525"
 PANEL    = "#071020"
@@ -35,9 +23,7 @@ TEXT2    = "#4a7a9b"
 TEXT3    = "#1a3a55"
 MONO     = '"Consolas","Courier New",monospace'
 
-# ──────────────────────────────────────────────────────────────
-# STYLESHEET GLOBALE
-# ──────────────────────────────────────────────────────────────
+
 APP_STYLE = f"""
 QMainWindow, QWidget {{
     background-color: {BG};
@@ -54,12 +40,12 @@ QSlider::groove:horizontal {{
     border-radius: 3px;
 }}
 QSlider::handle:horizontal {{
-    width: 20px;
-    height: 20px;
-    border-radius: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
     background: {BG};
     border: 2px solid {CYAN};
-    margin: -8px 0;
+    margin: -6px 0;
 }}
 QSlider::handle:horizontal:hover {{
     background: {CYAN};
@@ -95,11 +81,6 @@ QPushButton:pressed {{
     color: {CYAN};
 }}
 """
-
-# ──────────────────────────────────────────────────────────────
-# WIDGETS HELPERS
-# ──────────────────────────────────────────────────────────────
-
 class HLine(QFrame):
     def __init__(self):
         super().__init__()
@@ -120,9 +101,7 @@ class SectionTitle(QLabel):
         """)
 
 
-# ──────────────────────────────────────────────────────────────
-# MAIN WINDOW
-# ──────────────────────────────────────────────────────────────
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -141,31 +120,28 @@ class MainWindow(QMainWindow):
         self.layout_principal.setContentsMargins(0, 0, 0, 0)
         self.layout_principal.setSpacing(0)
 
-        # ── Scene 3D ──────────────────────────────────────────
+
         self.scene_containerScene = QWidget()
         self.scene_containerScene.setStyleSheet(f"background:{BG};")
         self.scene_layoutScene3D = QVBoxLayout(self.scene_containerScene)
         self.scene_layoutScene3D.setContentsMargins(0, 0, 0, 0)
         self.scene = Scene3D(self.scene_containerScene, self.grille)
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
-        self.layout_principal.addWidget(self.scene_containerScene, stretch=3)
+        self.layout_principal.addWidget(self.scene_containerScene)
 
-        # ── Stack panneau / édition ───────────────────────────
+
         self.stack = QStackedWidget()
         self.forme_en_scene = None
 
-        # ══════════════════════════════════════════════════════
-        # PANNEAU PRINCIPAL
-        # ══════════════════════════════════════════════════════
+
         self.panneau = QWidget()
-        self.panneau.setFixedWidth(320)
         self.panneau.setStyleSheet(f"background:{PANEL}; border-left: 1px solid {BORDER};")
         self.layout_controles = QVBoxLayout(self.panneau)
         self.layout_controles.setContentsMargins(18, 16, 18, 16)
-        self.layout_controles.setSpacing(4)
+        self.layout_controles.setSpacing(25)
 
-        # ── Header ────────────────────────────────────────────
-        header_row = QHBoxLayout()
+
+        ligne_principale = QHBoxLayout()
         title_lbl = QLabel("FLUID SIM")
         title_lbl.setStyleSheet(f"""
             color: {CYAN};
@@ -173,20 +149,20 @@ class MainWindow(QMainWindow):
             font-weight: bold;
             letter-spacing: 4px;
         """)
-        self.status_dot = QLabel("◉ IDLE")
+        self.status_dot = QLabel("◉ RUN")
         self.status_dot.setStyleSheet(f"""
             color: {TEXT2};
             font-size: 11px;
             letter-spacing: 2px;
         """)
-        header_row.addWidget(title_lbl)
-        header_row.addStretch()
-        header_row.addWidget(self.status_dot)
-        self.layout_controles.addLayout(header_row)
+        ligne_principale.addWidget(title_lbl)
+        ligne_principale.addStretch()
+        ligne_principale.addWidget(self.status_dot)
+        self.layout_controles.addLayout(ligne_principale)
         self.layout_controles.addWidget(HLine())
         self.layout_controles.addSpacing(4)
 
-        # ── Boutons Run / Reset ───────────────────────────────
+
         self.boutons = QHBoxLayout()
         self.boutons.setSpacing(8)
 
@@ -226,7 +202,7 @@ class MainWindow(QMainWindow):
         self.layout_controles.addSpacing(8)
         self.layout_controles.addWidget(HLine())
 
-        # ── Boutons formes ────────────────────────────────────
+
         self.layout_controles.addWidget(SectionTitle("OBSTACLES"))
 
         self.formesGeometriqueLigneDuHaut = QHBoxLayout()
@@ -273,7 +249,7 @@ class MainWindow(QMainWindow):
         self.layout_controles.addSpacing(4)
         self.layout_controles.addWidget(HLine())
 
-        # ── Sliders paramètres ────────────────────────────────
+
         self.layout_controles.addWidget(SectionTitle("PARAMÈTRES FLUIDE"))
 
         self.texte_temperature, self.slider_temperature = self.creer_bloc("Température", 0, 30,    "°C")
@@ -285,24 +261,20 @@ class MainWindow(QMainWindow):
         self.texte_vitesse,     self.slider_vitesse     = self.creer_bloc("Vitesse",     0, 100,   "m/s")
         self.layout_controles.addStretch()
 
-        # ══════════════════════════════════════════════════════
-        # PANNEAU ÉDITION FORME
-        # ══════════════════════════════════════════════════════
+
         self.scene2_container = QWidget()
-        self.scene2_container.setFixedWidth(320)
         self.scene2_container.setStyleSheet(f"background:{PANEL}; border-left: 1px solid {BORDER};")
         self.scene2_layout = QVBoxLayout(self.scene2_container)
         self.scene2_layout.setContentsMargins(18, 16, 18, 16)
-        self.scene2_layout.setSpacing(6)
+        self.scene2_layout.setSpacing(50)
 
-        # Retour
+
         btn_back = QPushButton("← RETOUR")
         btn_back.setFixedHeight(38)
         btn_back.clicked.connect(self.confirmer_forme)
         self.scene2_layout.addWidget(btn_back)
         self.scene2_layout.addWidget(HLine())
 
-        # Nom forme
         self.label_forme_choisie = QLabel("FORME")
         self.label_forme_choisie.setFont(self.police_scientifique)
         self.label_forme_choisie.setStyleSheet(f"""
@@ -314,7 +286,7 @@ class MainWindow(QMainWindow):
         """)
         self.scene2_layout.addWidget(self.label_forme_choisie)
 
-        # Sliders dynamiques forme
+
         self.layout_sliders_forme = QVBoxLayout()
         self.layout_sliders_forme.setSpacing(8)
         self.scene2_layout.addLayout(self.layout_sliders_forme)
@@ -323,7 +295,7 @@ class MainWindow(QMainWindow):
         self.scene2_layout.addWidget(HLine())
         self.scene2_layout.addWidget(SectionTitle("POSITION"))
 
-        # Sliders XYZ
+
         self.sliders_xyz = {}
         for axe, max_val in zip(["X", "Y", "Z"], [self.grille.x, self.grille.y, self.grille.z]):
             row = QHBoxLayout()
@@ -331,7 +303,7 @@ class MainWindow(QMainWindow):
 
             axe_lbl = QLabel(axe)
             axe_lbl.setFixedWidth(16)
-            axe_lbl.setStyleSheet(f"color:{CYAN}; font-size:13px; font-weight:bold;")
+            axe_lbl.setStyleSheet(f"color:{CYAN}; font-size:25px; font-weight:bold;")
 
             slider = QSlider(Qt.Horizontal)
             slider.setRange(1, int(max_val * 100))
@@ -353,7 +325,7 @@ class MainWindow(QMainWindow):
         self.scene2_layout.addWidget(HLine())
         self.scene2_layout.addSpacing(6)
 
-        # Confirmer / Supprimer
+
         self.bouton_confirmer = QPushButton("✔  CONFIRMER")
         self.bouton_confirmer.setFixedHeight(44)
         self.bouton_confirmer.setStyleSheet(f"""
@@ -389,12 +361,12 @@ class MainWindow(QMainWindow):
         self.scene2_layout.addWidget(self.bouton_supprimer)
         self.scene2_layout.addStretch()
 
-        # ── Stack final ───────────────────────────────────────
+
         self.stack.addWidget(self.panneau)
         self.stack.addWidget(self.scene2_container)
         self.layout_principal.addWidget(self.stack)
 
-        # ── Paramètres formes (identique) ─────────────────────
+
         self.parametres_formes = {
             "sphere":   [("rayon", 1, 3)],
             "cube":     [("c", 1, 3)],
@@ -407,9 +379,7 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
 
-    # ══════════════════════════════════════════════════════════
-    # MÉTHODES — identiques à ton original
-    # ══════════════════════════════════════════════════════════
+
 
     def generer_sliders_forme(self, nom_forme):
         self.sliders_forme.clear()
