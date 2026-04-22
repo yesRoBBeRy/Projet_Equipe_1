@@ -47,11 +47,12 @@ class Scene3D(QObject):
 
     def add_sphere(self, rayon):
         center_min = (rayon, rayon, rayon)
-        print(center_min)
         mesh = pv.Sphere(center=center_min, radius=rayon)
         acteur = self._enregistrer(mesh)
         self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "sphere", "params": {"rayon": rayon}}
+
+
 
     def add_cube(self, c):
         center_min = (c/2,c/2,c/2)
@@ -60,6 +61,8 @@ class Scene3D(QObject):
         self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "cube", "params": {"c": c}}
 
+
+
     def add_cylindre(self, rayon, l):
         center_min = (l/2, rayon, rayon)
         mesh = pv.Cylinder(center=center_min, radius=rayon, height=l)
@@ -67,9 +70,14 @@ class Scene3D(QObject):
         self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "cylindre", "params": {"rayon" : rayon, "h": l}}
 
+
+
     def add_prisme(self, h, l, w):
-        acteur = self._enregistrer(pv.Cube(center=(0, 0, 0), x_length=h, y_length=l, z_length=w))
+        center_min = (h/2, l/2, w/2)
+        acteur = self._enregistrer(pv.Cube(center=center_min, x_length=h, y_length=l, z_length=w))
         self.parametres_formes[acteur] = {"type": "prisme", "params": {"h": h, "l": l, "w": w}}
+
+
 
     def add_pyramide(self, h):
         new_mesh = self._creer_pyramide(h, (0, 0, 0))
@@ -80,24 +88,30 @@ class Scene3D(QObject):
     def add_fleche(self, l, w):
         mesh = pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w/2)
         acteur = self._enregistrer(mesh)
+        self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "fleche", "params": {"l": l, "w": w}}
 
 
     def on_pick(self, acteur):
-        # Définir l'acteur (la mesh) sélectionnée
-        # Émettre un signal vers main_window.py pour ouvrir la page des paramètres
+        # Définir l'acteur (de la mesh) sélectionné
+        # Émettre un signal vers main_window.py pour ouvrir le popup des paramètres
         if acteur in self.acteurs_mesh:
             self.acteur_current = acteur
             self.forme.emit(acteur)
+
+
 
     def _enregistrer(self, mesh):
         # Enregister les paramètres de la forme à la création
         acteur = self.plotter.add_mesh(mesh)
         self.acteurs_mesh[acteur] = mesh
         self.point_og[acteur] = mesh.points.copy()
+        print(self.point_og[acteur])
         self.pos_current[acteur] = (0, 0, 0)
         self.plotter.render()
         return acteur
+
+
 
     def deplacement(self, x, y, z):
         if self.acteur_current is None:
@@ -105,19 +119,43 @@ class Scene3D(QObject):
             return
         mesh = self.acteurs_mesh[self.acteur_current]
 
-        centre_min = np.array(self.pos_max[self.acteur_current]["centre_min"])
-        new_pos_plus = centre_min + np.array([x,y,z]) + np.array(self.pos_max[self.acteur_current]["bounds"])
-        if np.any((new_pos_plus > self.dimensions_grille) == True):
-            print("yo")
-            return
+        print(x)
 
+        x_max = self.pos_max[self.acteur_current]["x"][1]
+        x_min = self.pos_max[self.acteur_current]["x"][0]
+        y_max = self.pos_max[self.acteur_current]["y"][1]
+        y_min = self.pos_max[self.acteur_current]["y"][0]
+        z_max = self.pos_max[self.acteur_current]["z"][1]
+        z_min = self.pos_max[self.acteur_current]["z"][0]
+        print(x_max, x_min, x)
+
+        (pos_x, pos_y, pos_z) = self.pos_current[self.acteur_current]
+
+        if y == pos_y and z == pos_z:
+            print("1")
+            if x >= x_max:
+                print("2")
+                return
+        if x == pos_x and z == pos_z:
+            if y >= y_max:
+                return
+        if x == pos_x and y == pos_y:
+            if z >= z_max:
+                return
+
+
+        #Ajout de (x, y, z) à chaque point de la mesh
         point_origine = self.point_og[self.acteur_current]
         mesh.points[:] = point_origine + (x, y, z)
         self.pos_current[self.acteur_current] = (x, y, z)
         self.plotter.render()
 
+
+
     def changer_dimensions_dict(self, valeurs:dict):
         self.changer_dimensions(**valeurs)
+
+
 
     def changer_dimensions(self, **kwargs):
         if self.acteur_current is None:
@@ -138,6 +176,8 @@ class Scene3D(QObject):
 
         position = self.pos_current[acteur]
         self.deplacement(position[0], position[1], position[2])
+
+
 
     def _creer_mesh(self, params):
         if params["type"] == "sphere":
@@ -166,6 +206,8 @@ class Scene3D(QObject):
             return pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w/2)
         return None
 
+
+
     def _creer_pyramide(self, h, pos):
         # Code généré par claude.ai
         base = h / 2
@@ -190,14 +232,19 @@ class Scene3D(QObject):
         ])
         return pv.PolyData(points, faces)
 
+
+
     def get_bounds(self, mesh, acteur):
         bounds = mesh.bounds
         x = (bounds[1] - bounds[0])/2
         y = (bounds[3] - bounds[2])/2
         z = (bounds[5] - bounds[4])/2
 
-        self.pos_max[acteur] = {"bounds": [x, y, z], "centre_min": mesh.center}
-        print(self.pos_max[acteur])
+        x_max = float(self.dimensions_grille[0]) - 2 * x
+        y_max = float(self.dimensions_grille[1]) - 2 * y
+        z_max = float(self.dimensions_grille[2]) - 2 * z
+
+        self.pos_max[acteur] = {"x" : [x, x_max], "y": [y, y_max], "z" : [z, z_max]}
 
     def supprimer(self, acteur):
         if acteur in self.acteurs_mesh:
@@ -210,6 +257,8 @@ class Scene3D(QObject):
             if self.acteur_current == acteur:
                 self.acteur_current = None
             self.plotter.render()
+
+
 
     def add_forme(self, nom_forme, valeurs):
         d = {
