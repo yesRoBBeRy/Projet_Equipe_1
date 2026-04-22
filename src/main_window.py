@@ -96,11 +96,12 @@ class MainWindow(QMainWindow):
         self.layout_sliders_forme = QVBoxLayout()
         self.scene2_layout.addLayout(self.layout_sliders_forme)
         self.sliders_forme = {}
+        self.labels_forme = {}
 
         self.sliders_xyz = {}
         for axe, max_val in zip(["x", "y", "z"], [self.grille.x, self.grille.y, self.grille.z]):
             ligne = QHBoxLayout()
-            label_axe = QLabel(f"{axe}: 0.01")
+            label_axe = QLabel(f"{axe}: 1.00")
             label_axe.setFont(self.police_scientifique)
             slider = QSlider(Qt.Horizontal)
             slider.setRange(1, int(max_val * 100))
@@ -140,9 +141,10 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.update_simulation)
 
     def update_slider_position(self, v, l, a,):
+        l.setText(f"{a}: {v / 100:.2f}")
         if self.forme_en_scene not in self.scene.pos_current:
             return
-        l.setText(f"{a}: {v / 100:.2f}")
+
         pos = v/100
         x, y, z = self.scene.pos_current[self.forme_en_scene]
         if a == "x":
@@ -160,6 +162,7 @@ class MainWindow(QMainWindow):
                 item.widget().deleteLater()
 
         self.sliders_forme.clear()
+        self.labels_forme.clear()
 
         for param, min_val, max_val in self.parametres_formes.get(nom_forme, []):
             container = QWidget()
@@ -180,6 +183,7 @@ class MainWindow(QMainWindow):
 
             self.layout_sliders_forme.addWidget(container)
             self.sliders_forme[param] = slider
+            self.labels_forme[param] = label
 
 
 
@@ -203,6 +207,16 @@ class MainWindow(QMainWindow):
         self.layout_controles.addLayout(bloc)
         return texte, slider
 
+    def _connecter_sliders_forme(self):
+        for param, slider in self.sliders_forme.items():
+            try:
+                slider.valueChanged.disconnect()
+            except TypeError:
+                pass
+            label = self.labels_forme[param]
+            slider.valueChanged.connect(lambda v, l=label: l.setText(f"{v / 100:.2f}"))
+            slider.valueChanged.connect(self.mettre_a_jour_dimensions)
+
 
 
     def ouvrir_panneau_forme(self, nom_forme):
@@ -222,13 +236,7 @@ class MainWindow(QMainWindow):
         self.scene.acteur_current = self.forme_en_scene
 
 
-        # Sliders modifient les dimensions en direct
-        for slider in self.sliders_forme.values():
-            try:
-                slider.valueChanged.disconnect()
-            except TypeError:
-                pass
-            slider.valueChanged.connect(self.mettre_a_jour_dimensions)
+        self._connecter_sliders_forme()
 
         self.stack.setCurrentIndex(1)
 
@@ -316,10 +324,14 @@ class MainWindow(QMainWindow):
         self.label_forme_choisie.setText(nom_forme.capitalize())
 
         self.generer_sliders_forme(nom_forme)
+        self._connecter_sliders_forme()
 
         for nom, slider in self.sliders_forme.items():
             valeur = params["params"].get(nom, 1)
+            slider.blockSignals(True)
             slider.setValue(int(valeur * 100))
+            slider.blockSignals(False)
+            self.labels_forme[nom].setText(f"{valeur:.2f}")
 
         if acteur in self.scene.pos_current:
             x, y, z = self.scene.pos_current[acteur]
