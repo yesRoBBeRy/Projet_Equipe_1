@@ -74,13 +74,15 @@ class Scene3D(QObject):
 
     def add_prisme(self, h, l, w):
         center_min = (h/2, l/2, w/2)
-        acteur = self._enregistrer(pv.Cube(center=center_min, x_length=h, y_length=l, z_length=w))
+        mesh = pv.Cube(center=center_min, x_length=h, y_length=l, z_length=w)
+        acteur = self._enregistrer(mesh)
+        self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "prisme", "params": {"h": h, "l": l, "w": w}}
 
 
 
     def add_pyramide(self, h):
-        new_mesh = self._creer_pyramide(h, (0, 0, 0))
+        new_mesh = self._creer_pyramide(h)
         acteur = self._enregistrer(new_mesh)
         self.get_bounds(new_mesh, acteur)
         self.parametres_formes[acteur] = {"type": "pyramide", "params": {"h": h}}
@@ -105,9 +107,8 @@ class Scene3D(QObject):
         # Enregister les paramètres de la forme à la création
         acteur = self.plotter.add_mesh(mesh)
         self.acteurs_mesh[acteur] = mesh
-        self.point_og[acteur] = mesh.points.copy()
-        print(self.point_og[acteur])
-        self.pos_current[acteur] = (0, 0, 0)
+        self.point_og[acteur] = mesh.points - np.array(mesh.center)
+        self.pos_current[acteur] = tuple(mesh.center)
         self.plotter.render()
         return acteur
 
@@ -119,29 +120,10 @@ class Scene3D(QObject):
             return
         mesh = self.acteurs_mesh[self.acteur_current]
 
-        print(x)
-
-        x_max = self.pos_max[self.acteur_current]["x"][1]
-        x_min = self.pos_max[self.acteur_current]["x"][0]
-        y_max = self.pos_max[self.acteur_current]["y"][1]
-        y_min = self.pos_max[self.acteur_current]["y"][0]
-        z_max = self.pos_max[self.acteur_current]["z"][1]
-        z_min = self.pos_max[self.acteur_current]["z"][0]
-        print(x_max, x_min, x)
-
-        (pos_x, pos_y, pos_z) = self.pos_current[self.acteur_current]
-
-        if y == pos_y and z == pos_z:
-            print("1")
-            if x >= x_max:
-                print("2")
-                return
-        if x == pos_x and z == pos_z:
-            if y >= y_max:
-                return
-        if x == pos_x and y == pos_y:
-            if z >= z_max:
-                return
+        bounds = self.pos_max[self.acteur_current]
+        x = max(bounds["x"][0], min(x, bounds["x"][1]))
+        y = max(bounds["y"][0], min(y, bounds["y"][1]))
+        z = max(bounds["z"][0], min(z, bounds["z"][1]))
 
 
         #Ajout de (x, y, z) à chaque point de la mesh
@@ -155,11 +137,8 @@ class Scene3D(QObject):
     def changer_dimensions_dict(self, valeurs:dict):
         self.changer_dimensions(**valeurs)
 
-
-
     def changer_dimensions(self, **kwargs):
         if self.acteur_current is None:
-            self.acteur_current = None
             return
 
         acteur = self.acteur_current
@@ -167,48 +146,50 @@ class Scene3D(QObject):
         params["params"].update(kwargs)
 
         new_mesh = self._creer_mesh(params)
+        new_mesh.points -= np.array(new_mesh.center)
         self.acteurs_mesh[acteur].copy_from(new_mesh)
         self.get_bounds(self.acteurs_mesh[acteur], acteur)
         self.point_og[acteur] = self.acteurs_mesh[acteur].points.copy()
 
-        if acteur not in self.pos_current:
-            self.pos_current[acteur] = (0, 0, 0)
+        self.get_bounds(self.acteurs_mesh[acteur], acteur)
 
-        position = self.pos_current[acteur]
-        self.deplacement(position[0], position[1], position[2])
+        bounds = self.pos_max[acteur]
+        pos = self.pos_current[acteur]
+        x = max(bounds["x"][0], min(pos[0], bounds["x"][1]))
+        y = max(bounds["y"][0], min(pos[1], bounds["y"][1]))
+        z = max(bounds["z"][0], min(pos[2], bounds["z"][1]))
+        self.pos_current[acteur] = (x, y, z)
 
-
+        self.deplacement(x, y, z)
 
     def _creer_mesh(self, params):
         if params["type"] == "sphere":
             rayon = params["params"]["rayon"]
-            new_mesh = pv.Sphere(center=(0, 0, 0), radius=rayon)
-            return new_mesh
+            return pv.Sphere(center=(rayon, rayon, rayon), radius=rayon)
         elif params["type"] == "cube":
             c = params["params"]["c"]
-            new_mesh = pv.Cube(center=(0, 0, 0), x_length=c, y_length=c, z_length=c)
-            return new_mesh
+            return pv.Cube(center=(c / 2, c / 2, c / 2), x_length=c, y_length=c, z_length=c)
         elif params["type"] == "cylindre":
             rayon = params["params"]["rayon"]
             l = params["params"]["h"]
-            return pv.Cylinder(center=(0, 0, 0), radius=rayon, height=l)
+            return pv.Cylinder(center=(l / 2, rayon, rayon), radius=rayon, height=l)
         elif params["type"] == "prisme":
+            h = params["params"]["h"]
             l = params["params"]["l"]
             w = params["params"]["w"]
-            h = params["params"]["h"]
-            return pv.Cube(center=(0, 0, 0), x_length=l, y_length=h, z_length=w)
+            return pv.Cube(center=(h / 2, l / 2, w / 2), x_length=h, y_length=l, z_length=w)
         elif params["type"] == "pyramide":
             h = params["params"]["h"]
-            return self._creer_pyramide(h, (0, 0, 0))
+            return self._creer_pyramide(h)
         elif params["type"] == "fleche":
             l = params["params"]["l"]
             w = params["params"]["w"]
-            return pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w/2)
+            return pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w / 2)
         return None
 
 
 
-    def _creer_pyramide(self, h, pos):
+    def _creer_pyramide(self, h):
         # Code généré par claude.ai
         base = h / 2
         base_vertices = np.array([
@@ -222,7 +203,7 @@ class Scene3D(QObject):
         top = np.array([[centre_x, centre_y, h]])
 
         points = np.vstack([base_vertices, top])
-        points += np.array(pos)
+        points += np.array([base, 0, 0])
 
         faces = np.array([
             [3, 0, 1, 2],
