@@ -16,21 +16,14 @@ class Advections:
            F[:, :, :, i] = np.roll(F[:, :, :, i], cz, axis=2)
         self.parametres.F = F
 
-
     def appliquer_inverse(self):
-        F = self.parametres.F
-        obstacle = self.parametres.obstacle
+        obstacle = self.parametres.obstacle.astype(bool)
+        if not np.any(obstacle):
+            return
 
-        #velocites inversees pour qu'ils bouncent
-        bndryF = F[obstacle, :]
-        bndryF = bndryF[:, self.parametres.oppose]
-        F[obstacle, :] = bndryF
-
-        self.parametres.ux[obstacle] = 0
-        self.parametres.uy[obstacle] = 0
-        self.parametres.uz[obstacle] = 0
-
-        self.parametres.F = F
+        # Bounce-back: reflect each direction into its opposite at solid cells.
+        F_obstacle = self.parametres.F[obstacle, :].copy()
+        self.parametres.F[obstacle, :] = F_obstacle[:, self.parametres.oppose]
 
     # Variables du fluide
     def calculer_variables_macroscopiques(self):
@@ -44,6 +37,12 @@ class Advections:
         self.parametres.ux = (flat_F @ self.parametres.cxs).reshape(F.shape[:3]) * rho_inv
         self.parametres.uy = (flat_F @ self.parametres.cys).reshape(F.shape[:3]) * rho_inv
         self.parametres.uz = (flat_F @ self.parametres.czs).reshape(F.shape[:3]) * rho_inv
+
+        # No-slip in obstacle cells for cleaner obstacle-following streamlines.
+        obstacle = self.parametres.obstacle.astype(bool)
+        self.parametres.ux[obstacle] = 0.0
+        self.parametres.uy[obstacle] = 0.0
+        self.parametres.uz[obstacle] = 0.0
 
     def mise_a_jour(self):
         # 1. Stream (Movement)
