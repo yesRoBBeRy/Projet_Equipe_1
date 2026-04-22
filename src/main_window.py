@@ -148,6 +148,9 @@ class MainWindow(QMainWindow):
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
         self.layout_principal.addWidget(self.scene_containerScene)
 
+        self.scene.forme.connect(self.recevoir_forme)
+
+        # --- Stack pour panneau / édition ---
         # ── Pile de panneaux latéraux (côté droit) ───────────────────────────
         self.stack = QStackedWidget()
         self.forme_en_scene = None  # Référence à l'acteur temporaire affiché
@@ -412,16 +415,21 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_simulation)
 
-    # ════════════════════════════════════════════════════════════════════════
-    # Méthodes de l'interface
-    # ════════════════════════════════════════════════════════════════════════
+    def update_slider_position(self, v, l, a,):
+        if self.forme_en_scene not in self.scene.pos_current:
+            return
+        l.setText(f"{a}: {v / 100:.2f}")
+        pos = v/100
+        x, y, z = self.scene.pos_current[self.forme_en_scene]
+        if a == "x":
+            self.scene.deplacement(pos,y, z)
+        elif a == "y":
+            self.scene.deplacement(x, pos, z)
+        elif a == "z":
+            self.scene.deplacement(x, y, pos)
+
 
     def generer_sliders_forme(self, nom_forme):
-        """
-        (Re)génère les sliders de paramètres dimensionnels pour la forme donnée.
-        Vide d'abord l'ancienne liste, puis crée un bloc par paramètre défini
-        dans self.parametres_formes.
-        """
         self.sliders_forme.clear()
         # Suppression des anciens widgets du layout
         while self.layout_sliders_forme.count():
@@ -511,7 +519,8 @@ class MainWindow(QMainWindow):
 
         # Valeurs par défaut = minima de chaque paramètre
         default_valeurs = {param: min_val for param, min_val, max_val in self.parametres_formes.get(nom_forme, [])}
-        self.forme_en_scene = self.scene.ajouter_forme_temporaire(nom_forme, default_valeurs)
+        self.forme_en_scene = self.scene.add_forme(nom_forme, default_valeurs)
+        self.scene.acteur_current = self.forme_en_scene
 
         # Reconnexion propre des sliders (évite les doublons de signaux)
         for slider in self.sliders_forme.values():
@@ -645,3 +654,31 @@ class MainWindow(QMainWindow):
         self.slider_pression.setValue(0)
         self.slider_vitesse.setValue(0)
         print()
+
+    def recevoir_forme(self, acteur):
+        if acteur is None:
+            return
+
+        self.forme_en_scene = acteur
+        self.scene.acteur_current = acteur
+
+        params = self.scene.parametres_formes.get(acteur)
+        if params is None:
+            return
+
+        nom_forme = params["type"]
+        self.label_forme_choisie.setText(nom_forme.capitalize())
+
+        self.generer_sliders_forme(nom_forme)
+
+        for nom, slider in self.sliders_forme.items():
+            valeur = params["params"].get(nom, 1)
+            slider.setValue(int(valeur * 100))
+
+        if acteur in self.scene.pos_current:
+            x, y, z = self.scene.pos_current[acteur]
+            self.sliders_xyz["x"].setValue(int(x * 100))
+            self.sliders_xyz["y"].setValue(int(y * 100))
+            self.sliders_xyz["z"].setValue(int(z * 100))
+
+        self.stack.setCurrentIndex(1)
