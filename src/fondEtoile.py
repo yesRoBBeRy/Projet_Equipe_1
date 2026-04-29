@@ -54,4 +54,3 @@ class fondEtoile(QWidget):
         self.animerEtoile(self.etoilesD)
         self.animerEtoile(self.etoilesHB)
 
-        

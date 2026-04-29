@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
 
         self.grille = Grille(50, 50, 50)
         self.parametres = Parametres(0.0, 0.0, 0.0, 101.4, 20.0, grille=self.grille)  # add
-        self.advection = Advections(self.parametres)                                     # add
+        self.advection = Advections(self.parametres)  # add
 
         police_scientifique = QFont("Consolas", 12)  # monospace, taille 12
 
@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         QPushButton {
             border-radius: 25px;  
             border: 10px solid black;
-            
+
         }
         QPushButton:hover {
             background-color: lightgrey;
@@ -118,7 +118,7 @@ class MainWindow(QMainWindow):
         QPushButton {
             border-radius: 25px;  
             border: 10px solid black;
-            
+
         }
         QPushButton:hover {
             background-color: lightgrey;
@@ -131,14 +131,12 @@ class MainWindow(QMainWindow):
         QPushButton {
             border-radius: 25px;  
             border: 10px solid black;
-            
+
         }
         QPushButton:hover {
             background-color: lightgrey;
         }
         """)
-
-
 
         formesGeometrique.addWidget(boutonCercle)
         formesGeometrique.addWidget(boutonRectangle)
