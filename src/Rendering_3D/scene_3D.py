@@ -89,6 +89,8 @@ class Scene3D(QObject):
 
     def add_fleche(self, l, w):
         mesh = pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w/2)
+        b = mesh.bounds
+        mesh.points -= np.array([b[0], b[2], b[4]])
         acteur = self._enregistrer(mesh)
         self.get_bounds(mesh, acteur)
         self.parametres_formes[acteur] = {"type": "fleche", "params": {"l": l, "w": w}}
@@ -153,8 +155,27 @@ class Scene3D(QObject):
 
         self.get_bounds(self.acteurs_mesh[acteur], acteur)
 
-        bounds = self.pos_max[acteur]
+        bornes = self.pos_max[acteur]
+        if any(bornes[axe][1] < bornes[axe][0] for axe in ["x", "y", "z"]):
+            dims = self.dimensions_grille
+            half_extents = [
+                (self.acteurs_mesh[acteur].bounds[1] - self.acteurs_mesh[acteur].bounds[0]) / 2,
+                (self.acteurs_mesh[acteur].bounds[3] - self.acteurs_mesh[acteur].bounds[2]) / 2,
+                (self.acteurs_mesh[acteur].bounds[5] - self.acteurs_mesh[acteur].bounds[4]) / 2,
+            ]
+            facteur = min(float(dims[i]) / (2 * half_extents[i]) for i in range(3) if half_extents[i] > 0)
+
+            for k, v in params["params"].items():
+                params["params"][k] = v * facteur
+
+            new_mesh = self._creer_mesh(params)
+            new_mesh.points -= np.array(new_mesh.center)
+            self.acteurs_mesh[acteur].copy_from(new_mesh)
+            self.point_og[acteur] = self.acteurs_mesh[acteur].points.copy()
+            self.get_bounds(self.acteurs_mesh[acteur], acteur)
+
         pos = self.pos_current[acteur]
+        bounds = self.pos_max[acteur]
         x = max(bounds["x"][0], min(pos[0], bounds["x"][1]))
         y = max(bounds["y"][0], min(pos[1], bounds["y"][1]))
         z = max(bounds["z"][0], min(pos[2], bounds["z"][1]))
@@ -184,7 +205,10 @@ class Scene3D(QObject):
         elif params["type"] == "fleche":
             l = params["params"]["l"]
             w = params["params"]["w"]
-            return pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w / 2)
+            mesh = pv.Arrow(start=(0, 0, 0), scale=l, tip_radius=w, shaft_radius=w / 2)
+            b = mesh.bounds
+            mesh.points -= np.array([b[0], b[2], b[4]])
+            return mesh
         return None
 
 
@@ -221,9 +245,9 @@ class Scene3D(QObject):
         y = (bounds[3] - bounds[2])/2
         z = (bounds[5] - bounds[4])/2
 
-        x_max = float(self.dimensions_grille[0]) - 2 * x
-        y_max = float(self.dimensions_grille[1]) - 2 * y
-        z_max = float(self.dimensions_grille[2]) - 2 * z
+        x_max = float(self.dimensions_grille[0]) - x
+        y_max = float(self.dimensions_grille[1]) - y
+        z_max = float(self.dimensions_grille[2]) - z
 
         self.pos_max[acteur] = {"x" : [x, x_max], "y": [y, y_max], "z" : [z, z_max]}
 
