@@ -30,9 +30,9 @@ class Scene3D(QObject):
         self.acteur_current = None
 
         self.grille = grille
-        self.x = grille.x
-        self.y = grille.y
-        self.z = grille.z
+        self.x = grille.Nx
+        self.y = grille.Ny
+        self.z = grille.Nz
         self.dimensions_grille = self.grille.dimensions
 
         self.grille_3D = Grille3D(self.grille, self.plotter)
@@ -40,7 +40,8 @@ class Scene3D(QObject):
         self.grille_3D.acteur_volume = self.plotter.add_volume(
             self.grille_3D.volume,
             opacity="linear",
-            cmap="Greys"
+            cmap="Greys",
+            opacity_unit_distance=100  # makes it very transparent
         )
         self.grille_3D.acteur_volume.SetPickable(False)
         self.plotter.show()

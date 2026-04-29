@@ -1,3 +1,4 @@
+from src.Backend.Projection import Projection
 from src.Rendering_3D.scene_3D import Scene3D
 from src.grille import Grille
 from PySide6.QtWidgets import QMainWindow, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStackedWidget
@@ -11,7 +12,7 @@ class MainWindow(QMainWindow):
 
         self.pause = True
         self.forme_selectionnee = None
-        self.grille = Grille(5, 5, 10)
+        self.grille = Grille(25,25,25)
         self.police_scientifique = QFont("Consolas", 12)
         self.resize(1200, 650)
 
@@ -27,6 +28,9 @@ class MainWindow(QMainWindow):
         self.layout_principal.addWidget(self.scene_containerScene, stretch=3)
 
         self.scene.forme.connect(self.recevoir_forme)
+
+
+        self.visualisation = Projection(self.grille.parametres, self.scene.grille_3D)
 
         # --- Stack pour panneau / édition ---
         self.stack = QStackedWidget()
@@ -99,7 +103,7 @@ class MainWindow(QMainWindow):
         self.labels_forme = {}
 
         self.sliders_xyz = {}
-        for axe, max_val in zip(["x", "y", "z"], [self.grille.x, self.grille.y, self.grille.z]):
+        for axe, max_val in zip(["x", "y", "z"], [self.grille.Nx, self.grille.Ny, self.grille.Nz]):
             ligne = QHBoxLayout()
             label_axe = QLabel(f"{axe}: 1.00")
             label_axe.setFont(self.police_scientifique)
@@ -274,7 +278,7 @@ class MainWindow(QMainWindow):
 
     def update_simulation(self):
         self.grille.update_valeurs()
-        self.scene.grille_3D.update_scene()
+        self.visualisation.afficher_streamlines()
 
 
     def animerRun(self):
@@ -299,9 +303,10 @@ class MainWindow(QMainWindow):
         self.scene_layoutScene3D.removeWidget(self.scene.plotter)
         self.scene.plotter.deleteLater()
 
-        self.grille = Grille(5, 5, 10)
+        self.grille = Grille(25,25,25)
         self.scene = Scene3D(self.scene_containerScene, self.grille)
         self.scene_layoutScene3D.addWidget(self.scene.plotter)
+        self.visualisation.frame_count = 0
 
         self.slider_temperature.setValue(0)
         self.slider_viscous.setValue(0)
