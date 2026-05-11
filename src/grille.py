@@ -17,9 +17,9 @@ class Grille:
             "densite": np.ones((x, y, z))
         }
         self.test_rand()
-
         self.fps = 30
 
+    #Méthode test
     def test_rand(self):
         forme = self.valeurs["densite"].shape
         self.valeurs["densite"][:] = np.random.uniform(0, 1, size=forme)
