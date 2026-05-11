@@ -3,7 +3,13 @@ import numpy as np
 
 class Grille:
     def __init__(self, x, y, z):
-        #Initialisation des listes 3D selon un dictionnaire
+        self.Nx = x
+        self.Ny = y
+        self.Nz = z
+        self.dimensions = np.array([x, y, z])
+        self.x = x
+        self.y = y
+        self.z = z
         self.valeurs = {
             "vx": np.zeros((x, y, z)),
             "vy": np.zeros((x, y, z)),
@@ -11,11 +17,12 @@ class Grille:
             "densite": np.ones((x, y, z))
         }
         self.test_rand()
+        self.fps = 30
 
     #Méthode test
     def test_rand(self):
         forme = self.valeurs["densite"].shape
-        self.valeurs["densite"][:] = np.random.uniform(0,1,size=forme)
+        self.valeurs["densite"][:] = np.random.uniform(0, 1, size=forme)
 
     def update_valeurs(self):
         self.valeurs["densite"] *= 0.99
