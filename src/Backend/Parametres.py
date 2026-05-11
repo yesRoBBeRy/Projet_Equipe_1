@@ -1,7 +1,5 @@
 import numpy as np
 
-from src.Backend.Obstacle import Obstacle
-
 
 class Parametres:
     NL = 27
@@ -14,7 +12,8 @@ class Parametres:
         self.temperature = temperature
         self.grille = grille
         self.tau = 0.6 #viscosite
-        self.obstacle = Obstacle(self.grille).masque
+        # Rempli depuis les meshes de la scène (voir obstacle_from_scene.sync_obstacle_mask_from_scene)
+        self.obstacle = np.zeros((self.grille.Nx, self.grille.Ny, self.grille.Nz), dtype=bool)
 
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
         self.rho = np.ones((Nx, Ny, Nz))
@@ -53,6 +52,53 @@ class Parametres:
         # 2. Strong Inlet force at the very left wall
         F[0:2, :, :, 12] = 2.5
 
+        return F
+
+    def appliquer_parametres_fluide(
+        self,
+        temperature_c: float,
+        viscosite_mpa: float,
+        pression_kpa: float,
+        vitesse_ms: float,
+    ) -> None:
+        """
+        Met à jour pression / température / viscosité / vitesse d’entrée et
+        réinitialise la distribution LBM (F, F_inlet, champs macro), sans
+        toucher au masque d’obstacle ni à la géométrie de la grille.
+        """
+        self.temperature = float(temperature_c)
+        self.pression = float(pression_kpa)
+        self.vx_init = float(vitesse_ms)
+        self.vy_init = 0.0
+        self.vz_init = 0.0
+
+        vm = max(0.0, min(1000.0, float(viscosite_mpa)))
+        # τ plus élevé ⇒ viscosité cinématique plus grande (LBM, ordre de grandeur stable)
+        self.tau = float(0.52 + (vm / 1000.0) * 0.43)
+        self.tau = max(self.tau, 0.50055)
+        # Légère correction qualitative avec T (sans prétention physicochimique)
+        self.tau *= float(1.0 + 0.002 * max(-5.0, min(40.0, temperature_c)))
+        self.tau = min(self.tau, 1.35)
+
+        Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
+        rho0 = 1.0 + (float(pression_kpa) - 101.325) / 2500.0
+        self.rho = np.full((Nx, Ny, Nz), rho0, dtype=np.float64)
+        self.ux = np.zeros((Nx, Ny, Nz), dtype=np.float64)
+        self.uy = np.zeros((Nx, Ny, Nz), dtype=np.float64)
+        self.uz = np.zeros((Nx, Ny, Nz), dtype=np.float64)
+
+        self.F = self._init_distribution_parametrable(vitesse_ms)
+        self.F_inlet = self.F[0, :, :, :].copy()
+
+    def _init_distribution_parametrable(self, vitesse_ms: float) -> np.ndarray:
+        """Même idée que _init_distribution, avec une intensité d’entrée liée au slider vitesse."""
+        Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
+        F = np.ones((Nx, Ny, Nz, self.NL), dtype=np.float64)
+        v01 = max(0.0, min(100.0, float(vitesse_ms))) / 100.0
+        bulk = 1.0 + 0.12 * v01
+        inlet = 1.45 + 1.35 * v01
+        F[:, :, :, 12] = bulk
+        F[0:2, :, :, 12] = inlet
         return F
 
     def calculer_inverses(self): # utiliser pour flipper la vitesse
