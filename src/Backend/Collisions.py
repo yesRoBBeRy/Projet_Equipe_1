@@ -2,6 +2,7 @@ import numpy as np
 
 
 class Collisions:
+    #faire les calculs des collisions
 
     def __init__(self, parametres):
         self.parametres = parametres
@@ -18,9 +19,9 @@ class Collisions:
         udotu = ux ** 2 + uy ** 2 + uz ** 2
         cdotu = cxs * ux + cys * uy + czs * uz
 
-        Feq = rho * self.parametres.poids * (1 + 3 * cdotu + 9 / 2 * cdotu ** 2 - 3 / 2 * udotu)
-        return Feq
+        feq = rho * self.parametres.poids * (1 + 3 * cdotu + 9 / 2 * cdotu ** 2 - 3 / 2 * udotu)
+        return feq
 
     def calculer_collisions(self):
-        Feq = self.calculer_equilibrium()
-        self.parametres.F = self.parametres.F - (1/self.parametres.tau) * (self.parametres.F - Feq)
+        feq = self.calculer_equilibrium()
+        self.parametres.F = self.parametres.F - (1/self.parametres.tau) * (self.parametres.F - feq)

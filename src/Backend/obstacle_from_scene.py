@@ -1,11 +1,10 @@
-"""Voxelise les meshes de la scène 3D en masque d'obstacle pour le LBM."""
-
 import numpy as np
 import pyvista as pv
 
+# Assisté par du AI
 
 def _voxelize_mesh_bbox(mesh, n_x: int, n_y: int, n_z: int) -> np.ndarray:
-    """Remplit les cellules LBM dont le centre est dans l’AABB du mesh (rapide)."""
+    # Voxelier la scène 3D
     mask = np.zeros((n_x, n_y, n_z), dtype=bool)
     surf = mesh
     if not isinstance(surf, pv.PolyData):
@@ -23,13 +22,7 @@ def _voxelize_mesh_bbox(mesh, n_x: int, n_y: int, n_z: int) -> np.ndarray:
 
 
 def sync_obstacle_mask_from_scene(scene, parametres, fast: bool = False) -> None:
-    """
-    Met à jour ``parametres.obstacle`` (bool, shape Nx×Ny×Nz) à partir des
-    formes présentes dans ``scene.acteurs_mesh`` (même repère que la grille).
 
-    ``fast=True`` : union des boîtes englobantes uniquement (léger, pour les sliders).
-    ``fast=False`` : test « intérieur » point par point (lourd, résultat précis).
-    """
     grille = scene.grille
     n_x, n_y, n_z = grille.Nx, grille.Ny, grille.Nz
     mask = np.zeros((n_x, n_y, n_z), dtype=bool)
