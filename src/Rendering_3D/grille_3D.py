@@ -7,7 +7,7 @@ from src.Rendering_3D.viz_coords import bring_named_actor_to_front, volume_node_
 def _densite_pour_volume(rho_pt: np.ndarray) -> np.ndarray:
     """
     Étire le contraste du scalaire affiché dans le volume (ρ LBM ~ 1 partout).
-    Sans cela, la carte « Greys » donne un bloc uniforme sombre dès que la sim tourne.
+    Aide de l'intelligence artificielle.
     """
     r = np.asarray(rho_pt, dtype=np.float32).ravel()
     if r.size == 0:
@@ -23,6 +23,8 @@ def _densite_pour_volume(rho_pt: np.ndarray) -> np.ndarray:
 class Grille3D:
     def __init__(self, grille, plotter):
         densites = grille.valeurs["densite"]
+
+        self.densitee_max = densites.max()
 
         self.grille = grille
 
@@ -44,9 +46,17 @@ class Grille3D:
         self.acteur_volume = None
 
     def update_scene(self):
-        #Logique de mise à jour de l'opacité
-        self.volume.cell_data["densite"] = self.grille.valeurs["densite"].flatten(order="F")
-        self.volume= self.volume.cell_data_to_point_data()
+        """Changement du data dans chacune des cellules"""
+        Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
+
+        ox, oy, oz = volume_node_origin(Nx, Ny, Nz)
+        temp = pv.ImageData(
+            dimensions=(Nx + 1, Ny + 1, Nz + 1),
+            spacing=(1, 1, 1),
+            origin=(ox, oy, oz),
+        )
+        temp.cell_data["densite"] = self.grille.valeurs["densite"].flatten(order="F")
+        temp = temp.cell_data_to_point_data()
 
         rho_pt = np.asarray(temp.point_data["densite"], dtype=np.float32)
         self.volume.point_data["densite"] = _densite_pour_volume(rho_pt)
