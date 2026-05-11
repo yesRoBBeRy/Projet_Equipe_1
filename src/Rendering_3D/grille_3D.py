@@ -7,7 +7,7 @@ from src.Rendering_3D.viz_coords import bring_named_actor_to_front, volume_node_
 def _densite_pour_volume(rho_pt: np.ndarray) -> np.ndarray:
     """
     Étire le contraste du scalaire affiché dans le volume (ρ LBM ~ 1 partout).
-    Sans cela, la carte « Greys » donne un bloc uniforme sombre dès que la sim tourne.
+    Aide de l'intelligence artificielle.
     """
     r = np.asarray(rho_pt, dtype=np.float32).ravel()
     if r.size == 0:
@@ -44,6 +44,7 @@ class Grille3D:
         self.acteur_volume = None
 
     def update_scene(self):
+        """Changement du data dans chacune des cellules"""
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
 
         ox, oy, oz = volume_node_origin(Nx, Ny, Nz)
