@@ -33,12 +33,14 @@ class Grille3D:
         x, y, z = densites.shape
         ox, oy, oz = volume_node_origin(x, y, z)
 
+        #Création du volume de la grille 3D
         self.volume = pv.ImageData(
             dimensions=(x + 1, y + 1, z + 1),
             spacing=(1, 1, 1),
             origin=(ox, oy, oz),
         )
-        self.volume.cell_data["densite"] = grille.valeurs["densite"].flatten(order="F")
+        #Transfert des valeurs de densité vers les valeurs de chacune des cellules
+        self.volume.cell_data["densite"] = densites.flatten(order="F")
         self.volume = self.volume.cell_data_to_point_data()
 
         self.acteur_volume = None
