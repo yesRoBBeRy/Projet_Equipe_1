@@ -13,20 +13,18 @@ from src.Rendering_3D.viz_coords import (
     streamline_seed_plane_params,
 )
 
-# « Gel » : ne recalculer les streamlines que 1 frame sur FREEZE (économise le CPU).
+#Conditions pour les streamlines et ne pas voir les streamlines avant d'avoir le final
 STREAMLINE_FREEZE_FRAMES = 8
-# Résolution du plan de graines (i×j points) — plus élevé = plus de lignes.
 STREAMLINE_SEED_RES = 22
-# Pas d’affichage des lignes de courant avant N pas LBM (champ + lissage stabilisés).
 STREAMLINE_WARMUP_STEPS = 120
 
 
 class Projection:
-    def __init__(self, parametres, grille_3D):
+    def __init__(self, parametres, grille_3d):
         self.parametres = parametres
-        self.grille_3D = grille_3D
+        self.grille_3D = grille_3d
         self.frame_count = 0
-        self._sl_skip = 0  # compteur pour le gel des recalculs de streamlines
+        self._sl_skip = 0
         self._seed_cache = None
         self._seed_signature = None
         self._smoothed_velocity = None
@@ -43,7 +41,7 @@ class Projection:
         pv.global_theme.allow_empty_mesh = True
 
     def remove_streamline_layer(self):
-        """Retire uniquement les lignes de courant (ex. après ARRÊTER)."""
+        #juste enlever les streamlines
         pl = self.grille_3D.plotter
         if "streamline_layer" in pl.actors:
             pl.remove_actor("streamline_layer")
@@ -57,7 +55,7 @@ class Projection:
             pass
 
     def clear_streamlines(self):
-        """Retire lignes de courant et obstacle visuel (ex. pendant édition d’une forme)."""
+        # tout enlever
         self.remove_streamline_layer()
         self._lbm_steps_for_sl = 0
         self._obstacle_mask_cache = None
@@ -70,11 +68,10 @@ class Projection:
             pass
 
     def record_lbm_step_for_streamlines(self):
-        """Un pas de simulation fluide (appeler une fois par tick timer quand la sim tourne)."""
         self._lbm_steps_for_sl += 1
 
     def reset_streamline_warmup(self):
-        """Au LANCER : repartir sans lignes jusqu’à la fin du warmup."""
+        #Lancer
         self._lbm_steps_for_sl = 0
         self._streamline_warmup_active = True
         self._smoothed_velocity = None
@@ -92,7 +89,6 @@ class Projection:
         return vitesse / (vmax + 1e-10)
 
     def _integrate_streamlines_polydata(self, grid, terminal_speed):
-        """Intégration VTK en arrière-plan (thread + processEvents, sans dialogue)."""
         sl_kw = dict(
             vectors="Velocity",
             integration_direction="forward",
@@ -130,23 +126,20 @@ class Projection:
         return out_holder[0]
 
     def afficher_streamlines(self):
-        """
-        Obstacle + champ lissé à jour chaque frame ; streamlines recalculées
-        1 frame sur STREAMLINE_FREEZE_FRAMES (« gel ») pour limiter le coût.
-        """
+
         if self.frame_count == 0:
             self._smoothed_velocity = None
 
-        Nx, Ny, Nz = self.parametres.grille.Nx, self.parametres.grille.Ny, self.parametres.grille.Nz
-        ox, oy, oz = lattice_field_origin(Nx, Ny, Nz)
+        nx, ny, nz = self.parametres.grille.Nx, self.parametres.grille.Ny, self.parametres.grille.Nz
+        ox, oy, oz = lattice_field_origin(nx, ny, nz)
         plotter = self.grille_3D.plotter
 
         mask = (
             self.parametres.obstacle.astype(bool)
             if hasattr(self.parametres, "obstacle")
-            else np.zeros((Nx, Ny, Nz), dtype=bool)
+            else np.zeros((nx, ny, nz), dtype=bool)
         )
-        # Ne reconstruire le maillage obstacle que si le masque a changé (évite clignotement).
+        # Reconstruire le maillage obstacle que si mask change
         obs_changed = self._obstacle_mask_cache is None or (
             not np.array_equal(mask, self._obstacle_mask_cache)
         )
@@ -156,7 +149,7 @@ class Projection:
                 plotter.remove_actor("obstacle_mesh")
             if np.any(mask):
                 grid_mask = pv.ImageData(
-                    dimensions=(Nx, Ny, Nz),
+                    dimensions=(nx, ny, nz),
                     spacing=(1, 1, 1),
                     origin=(ox, oy, oz),
                 )
@@ -169,7 +162,6 @@ class Projection:
                     smooth_shading=False,
                     name="obstacle_mesh",
                 )
-        # Couche tampon autour du solide : vitesse nulle sur un voisinage (réduit le traversement)
         struct = generate_binary_structure(3, 1)
         mask_vel = (
             binary_dilation(mask, structure=struct, iterations=2)
@@ -202,7 +194,7 @@ class Projection:
             plotter.render()
             return
 
-        # Pas de lignes pendant la phase « fluide en route » (LANCER) jusqu’à stabilisation.
+        # Pas de lignes jusqua stabilisation.
         if (
             self._streamline_warmup_active
             and self._lbm_steps_for_sl < STREAMLINE_WARMUP_STEPS
@@ -213,7 +205,6 @@ class Projection:
             plotter.render()
             return
 
-        # Gel : obstacle déjà à jour ; on saute grille + intégration la plupart des frames
         if "streamline_layer" in plotter.actors:
             self._sl_skip += 1
             if self._sl_skip < STREAMLINE_FREEZE_FRAMES:
@@ -224,7 +215,7 @@ class Projection:
         self._sl_skip = 0
 
         grid = pv.ImageData(
-            dimensions=(Nx, Ny, Nz),
+            dimensions=(nx, ny, nz),
             spacing=(1, 1, 1),
             origin=(ox, oy, oz),
         )
@@ -234,7 +225,7 @@ class Projection:
         vectors[:, 2] = uz.flatten(order="F")
         grid.point_data["Velocity"] = vectors
 
-        sp = streamline_seed_plane_params(Ny, Nz)
+        sp = streamline_seed_plane_params(ny, nz)
         y_min = sp["y_min"]
         y_max = sp["y_max"]
         z_min = sp["z_min"]
@@ -242,9 +233,9 @@ class Projection:
         inlet_x = sp["inlet_x"]
 
         seed_signature = (
-            Nx,
-            Ny,
-            Nz,
+            nx,
+            ny,
+            nz,
             inlet_x,
             round(y_min, 2),
             round(y_max, 2),

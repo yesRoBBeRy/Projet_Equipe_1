@@ -12,7 +12,7 @@ class Parametres:
         self.temperature = temperature
         self.grille = grille
         self.tau = 0.6 #viscosite
-        # Rempli depuis les meshes de la scène (voir obstacle_from_scene.sync_obstacle_mask_from_scene)
+        # Rempli depuis les meshs de la scène (voir obstacle_from_scene.sync_obstacle_mask_from_scene)
         self.obstacle = np.zeros((self.grille.Nx, self.grille.Ny, self.grille.Nz), dtype=bool)
 
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
@@ -61,11 +61,8 @@ class Parametres:
         pression_kpa: float,
         vitesse_ms: float,
     ) -> None:
-        """
-        Met à jour pression / température / viscosité / vitesse d’entrée et
-        réinitialise la distribution LBM (F, F_inlet, champs macro), sans
-        toucher au masque d’obstacle ni à la géométrie de la grille.
-        """
+        # Met a jour les parametres configurables
+
         self.temperature = float(temperature_c)
         self.pression = float(pression_kpa)
         self.vx_init = float(vitesse_ms)
@@ -73,10 +70,8 @@ class Parametres:
         self.vz_init = 0.0
 
         vm = max(0.0, min(1000.0, float(viscosite_mpa)))
-        # τ plus élevé ⇒ viscosité cinématique plus grande (LBM, ordre de grandeur stable)
         self.tau = float(0.52 + (vm / 1000.0) * 0.43)
         self.tau = max(self.tau, 0.50055)
-        # Légère correction qualitative avec T (sans prétention physicochimique)
         self.tau *= float(1.0 + 0.002 * max(-5.0, min(40.0, temperature_c)))
         self.tau = min(self.tau, 1.35)
 
@@ -91,7 +86,7 @@ class Parametres:
         self.F_inlet = self.F[0, :, :, :].copy()
 
     def _init_distribution_parametrable(self, vitesse_ms: float) -> np.ndarray:
-        """Même idée que _init_distribution, avec une intensité d’entrée liée au slider vitesse."""
+        # changer la vitesse
         Nx, Ny, Nz = self.grille.Nx, self.grille.Ny, self.grille.Nz
         F = np.ones((Nx, Ny, Nz, self.NL), dtype=np.float64)
         v01 = max(0.0, min(100.0, float(vitesse_ms))) / 100.0

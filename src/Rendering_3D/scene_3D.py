@@ -24,9 +24,6 @@ class Scene3D(QObject):
         except Exception:
             pass
 
-        # Sélection de forme : left_clicking=False pour ne pas prendre le pas sur la
-        # souris du trackball (rotation / panoramique « dans le plan » / zoom molette).
-        # PyVista : touche « p » puis clic sur une forme pour la sélectionner.
         self.plotter.enable_mesh_picking(
             callback=self.on_pick,
             use_actor=True,
@@ -38,10 +35,10 @@ class Scene3D(QObject):
         self.point_og = {}
         self.parametres_formes = {}
         self.pos_current = {}
-        self.rot_current = {}  # acteur -> (rx°, ry°, rz°) autour du centre local
+        self.rot_current = {}
         self.pos_max = {}
         self.acteur_current = None
-        self._editing_target = None  # acteur dont le contour jaune est affiché (mode édition)
+        self._editing_target = None
         self._obstacle_revision = 0
         self._obstacle_mask_synced_rev = -1
 
@@ -149,7 +146,7 @@ class Scene3D(QObject):
             pass
 
     def _apply_uniform_lighting(self):
-        """Un seul headlight + ambiant global pour un rendu homogène dans la scène."""
+        """Réglages de lumière"""
         pl = self.plotter
         ren = pl.renderer
         try:
@@ -167,6 +164,7 @@ class Scene3D(QObject):
         pl.add_light(pv.Light(light_type="headlight"))
 
     def add_sphere(self, rayon):
+        """Initialisation d'un objet sphère"""
         center_min = (rayon, rayon, rayon)
         mesh = pv.Sphere(center=center_min, radius=rayon)
         acteur = self._enregistrer(mesh)
@@ -178,6 +176,7 @@ class Scene3D(QObject):
 
 
     def add_cube(self, c):
+        """Initialisation d'un objet cube"""
         center_min = (c/2,c/2,c/2)
         mesh = pv.Cube(center=center_min, x_length=c, y_length=c, z_length=c)
         acteur = self._enregistrer(mesh)
@@ -189,6 +188,7 @@ class Scene3D(QObject):
 
 
     def add_cylindre(self, rayon, l):
+        """Initialisation d'un objet cylindre"""
         center_min = (l/2, rayon, rayon)
         mesh = pv.Cylinder(center=center_min, radius=rayon, height=l)
         acteur = self._enregistrer(mesh)
@@ -200,6 +200,7 @@ class Scene3D(QObject):
 
 
     def add_prisme(self, h, l, w):
+        """Initialisation d'un objet prisme"""
         center_min = (h/2, l/2, w/2)
         mesh = pv.Cube(center=center_min, x_length=h, y_length=l, z_length=w)
         acteur = self._enregistrer(mesh)
@@ -211,6 +212,7 @@ class Scene3D(QObject):
 
 
     def add_pyramide(self, h):
+        """Initialisation d'un objet pyramide"""
         new_mesh = self._creer_pyramide(h)
         acteur = self._enregistrer(new_mesh)
         self.get_bounds(new_mesh, acteur)
@@ -219,6 +221,7 @@ class Scene3D(QObject):
         self.deplacement(0, 0, 0)
 
     def add_fleche(self, l, w):
+        """Initialisation d'un objet flèche"""
         mesh = self._creer_fleche_mesh(l, w)
         acteur = self._enregistrer(mesh)
         self.get_bounds(mesh, acteur)
@@ -247,6 +250,7 @@ class Scene3D(QObject):
         self.plotter.render()
         return acteur
 
+    #Bloc de code pour la rotation généré par l'ia
     @staticmethod
     def _mat_euler_xyz_deg(rx: float, ry: float, rz: float) -> np.ndarray:
         """Matrice 3×3 : rotations intrinsèques XYZ (degrés), sans SciPy."""
@@ -342,6 +346,8 @@ class Scene3D(QObject):
         self.rot_current[acteur] = (float(rx_deg), float(ry_deg), float(rz_deg))
         self.appliquer_pose(acteur)
 
+    #Fin ia
+
     def deplacement(self, x, y, z):
         if self.acteur_current is None:
             self.acteur_current = None
@@ -368,6 +374,7 @@ class Scene3D(QObject):
         params = self.parametres_formes[acteur]
         params["params"].update(kwargs)
 
+        #Redimension des points du mesh
         new_mesh = self._creer_mesh(params)
         new_mesh.points -= np.array(new_mesh.center)
         self.acteurs_mesh[acteur].copy_from(new_mesh)
@@ -414,7 +421,6 @@ class Scene3D(QObject):
     def _creer_fleche_mesh(l: float, w: float) -> pv.PolyData:
         """
         Flèche le long de +X. `l` = longueur, `w` = épaisseur (rayon relatif).
-        L’ancien code passait tip_radius=w et scale=l : cône énorme en Y/Z, pas une flèche.
         """
         l = max(float(l), 0.5)
         w = max(float(w), 0.5)
@@ -436,7 +442,7 @@ class Scene3D(QObject):
 
 
     def _creer_pyramide(self, h):
-        # Pyramide à base carrée (un seul sommet) — évite les 4 « pics » d’un tétraèdre
+        # Pyramide à base carrée
         pyr = pv.Pyramid().copy(deep=True)
         b = np.asarray(pyr.bounds, dtype=float)
         dz = max(b[5] - b[4], 1e-9)
@@ -447,6 +453,7 @@ class Scene3D(QObject):
 
 
     def get_bounds(self, mesh, acteur):
+        """Méthode pour chercher une forme carrée qui englobe totalement la forme sélectionnée (hitbox)"""
         bounds = mesh.bounds
         hx = (bounds[1] - bounds[0]) / 2.0
         hy = (bounds[3] - bounds[2]) / 2.0
@@ -454,7 +461,7 @@ class Scene3D(QObject):
         gx = float(self.dimensions_grille[0])
         gy = float(self.dimensions_grille[1])
         gz = float(self.dimensions_grille[2])
-        # Domaine centré sur (0,0,0) : demi-boîte [-gx/2, gx/2] moins la demi-extent du mesh
+
         self.pos_max[acteur] = {
             "x": [-gx / 2 + hx, gx / 2 - hx],
             "y": [-gy / 2 + hy, gy / 2 - hy],
@@ -465,6 +472,8 @@ class Scene3D(QObject):
         if acteur in self.acteurs_mesh:
             if self._editing_target == acteur:
                 self.set_editing_highlight(None)
+
+            # Supprimer tous les éléments de l'ancien mesh
             self.plotter.remove_actor(acteur)
             del self.acteurs_mesh[acteur]
             del self.parametres_formes[acteur]
@@ -480,6 +489,7 @@ class Scene3D(QObject):
 
 
     def add_forme(self, nom_forme, valeurs):
+        #Sélection plus rapide qu'un elif
         d = {
             "sphere" : lambda val: self.add_sphere(val["rayon"]),
             "prisme" : lambda val: self.add_prisme(val["h"], val["l"], val["w"]),
